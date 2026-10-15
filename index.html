@@ -1,0 +1,1114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Weekly meningitis cases, alerts and epidemics from WHO's dashboard, by health district, for the African meningitis belt">
+<style>html, body { margin: 0; }</style>
+<title>Belt District Atlas</title>
+<script>try { document.documentElement.dataset.theme = localStorage.getItem("atlas-theme") || "light"; } catch (e) { document.documentElement.dataset.theme = "light"; }</script>
+<style>
+  /* Swiss grid: one grotesk face set flush left; the map takes the open column and a 320px data column sits to its right;
+     black rules divide the sections instead of boxes; colour is kept for the data */
+  :root {
+    --sans: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", system-ui, sans-serif;
+    --t-xs: 0.72rem; --t-s: 0.82rem; --t-m: 0.94rem; --t-l: 1.15rem; --t-xl: 1.9rem; --t-xxl: 2.9rem;
+    --page: #ffffff; --surface: #ffffff; --ink: #111111; --ink-2: #4b4b4b; --muted: #8c8c8c; --hair: #e4e4e4; --axis: #bdbdbd;
+    --accent: #111111; --accent-soft: #eeeeee; --ring: rgba(17,17,17,0.16);
+    --zero: transparent; --nodata-bg: transparent; --nodata-line: #9a9a9a; --edge: rgba(17,17,17,0.28); --hot: #111111;
+    --q1: #d4b20a; --q2: #d98e07; --q3: #d76a04; --q4: #d04102; --q5: #bb1f21; --q6: #991a2c;
+    --outline: #dcdcdc; --flash: #eb6834;
+    --alert: #fab219; --epi: #d03b3b; --cell0: #e6e6e6;
+    --r1: #f6d3d3; --r2: #eeaaaa; --r3: #e27f7f; --r4: #d14f4f; --r5: #ad3434; --r6: #7f2222;
+    --s1: #bfa5df; --s2: #9069c5; --s3: #5e3594; --calm: #d4a14a; --outb: #b32322;
+    --water: #e3eaf0; --land: #f1f0ec; --border: #a09e95; --river: #a8bccf; --label: #6f6d66;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #0f0f0f; --surface: #0f0f0f; --ink: #f1f1f1; --ink-2: #bcbcbc; --muted: #8a8a8a; --hair: #2a2a2a; --axis: #474747;
+      --accent: #f1f1f1; --accent-soft: #232323; --ring: rgba(241,241,241,0.18);
+      --zero: transparent; --nodata-bg: transparent; --nodata-line: #777777; --edge: rgba(241,241,241,0.26); --hot: #ffffff;
+      --q1: #5c4a02; --q2: #7b5505; --q3: #a35a04; --q4: #d25704; --q5: #f8593a; --q6: #ff7c70;
+      --outline: #3a3a3a; --flash: #d95926;
+      --alert: #fab219; --epi: #d03b3b; --cell0: #333333;
+      --r1: #4b1d1d; --r2: #6f2727; --r3: #983333; --r4: #c24848; --r5: #e07575; --r6: #f3aaaa;
+      --s1: #513b6d; --s2: #845eb6; --s3: #b795e6; --calm: #9e711e; --outb: #e96560;
+      --water: #121a21; --land: #232321; --border: #5f5e58; --river: #35506a; --label: #9d9b92;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #0f0f0f; --surface: #0f0f0f; --ink: #f1f1f1; --ink-2: #bcbcbc; --muted: #8a8a8a; --hair: #2a2a2a; --axis: #474747;
+    --accent: #f1f1f1; --accent-soft: #232323; --ring: rgba(241,241,241,0.18);
+    --zero: transparent; --nodata-bg: transparent; --nodata-line: #777777; --edge: rgba(241,241,241,0.26); --hot: #ffffff;
+    --q1: #5c4a02; --q2: #7b5505; --q3: #a35a04; --q4: #d25704; --q5: #f8593a; --q6: #ff7c70;
+    --outline: #3a3a3a; --flash: #d95926;
+    --alert: #fab219; --epi: #d03b3b; --cell0: #333333;
+    --r1: #4b1d1d; --r2: #6f2727; --r3: #983333; --r4: #c24848; --r5: #e07575; --r6: #f3aaaa;
+      --s1: #513b6d; --s2: #845eb6; --s3: #b795e6; --calm: #9e711e; --outb: #e96560;
+    --water: #121a21; --land: #232321; --border: #5f5e58; --river: #35506a; --label: #9d9b92;
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  body { background: var(--page); color: var(--ink); font: 400 var(--t-m)/1.45 var(--sans); padding-inline: 16px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1360px; margin: 0 auto; padding-block: 28px 48px; display: grid; gap: 24px; }
+  header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px 24px; padding-bottom: 14px; border-bottom: 2px solid var(--ink); }
+  h1 { font-size: var(--t-xxl); font-weight: 700; letter-spacing: -0.03em; line-height: 0.95; margin: 0; text-wrap: balance; }
+  header .theme { justify-self: end; }
+  header .theme button { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.08em; padding: 5px 10px; }
+  .controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px 28px; }
+  .controls .break { flex-basis: 100%; height: 0; margin-top: -16px; }
+  .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .ctl > label:first-child, .ctl > .lbl:first-child { flex-basis: 100%; }
+  .ctl label, .lbl { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  select { font: inherit; font-size: var(--t-s); color: var(--ink); background-color: var(--page); border: 1px solid var(--ink); border-radius: 0; padding: 6px 28px 6px 9px; appearance: none; -webkit-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+    background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+  .seg { display: inline-flex; border: 1px solid var(--ink); }
+  .seg button { font: inherit; font-size: var(--t-s); border: 0; border-left: 1px solid var(--ink); background: transparent; color: var(--ink); padding: 6px 12px; cursor: pointer; }
+  .seg button:first-child { border-left: 0; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--page); }
+  .seg button:not([aria-pressed="true"]):hover { background: var(--accent-soft); }
+  input[type=range] { accent-color: var(--ink); width: 180px; max-width: 42vw; }
+  .yr { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 2.2em; font-size: var(--t-l); }
+  .dates { color: var(--ink-2); font-size: var(--t-s); font-variant-numeric: tabular-nums; min-width: 8.5em; }
+  .playbtn { font: inherit; font-size: var(--t-s); border: 1px solid var(--ink); border-radius: 0; background: transparent; color: var(--ink); padding: 6px 14px; cursor: pointer; min-width: 5.6em; }
+  .playbtn[aria-pressed="true"] { background: var(--ink); color: var(--page); }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 32px; align-items: start; }
+  @media (max-width: 980px) { .main { grid-template-columns: 1fr; } }
+  .mapcard { position: relative; min-width: 0; border-top: 1px solid var(--ink); }
+  #map { display: block; width: 100%; height: auto; touch-action: none; cursor: grab; }
+  #map:active { cursor: grabbing; }
+  #map .osm image { opacity: 0.22; pointer-events: none; }
+  #map:not(.bounds) .cborder.belt { display: none; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #map .osm image { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9); } }
+  :root[data-theme="dark"] #map .osm image { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9); }
+  #map path.d { stroke: var(--edge); stroke-width: 0.5; vector-effect: non-scaling-stroke; fill-opacity: 0.88; }
+  #map.bounds path.d { stroke: var(--ink-2); stroke-opacity: 0.7; stroke-width: 0.7; }
+  #map .cborder { fill: none; stroke: var(--ink); stroke-opacity: 0.8; stroke-width: 1.3; stroke-linejoin: round; vector-effect: non-scaling-stroke; pointer-events: none; }
+  #map path.d.reg { stroke-width: 0.9; }
+  #map path.d.dim { opacity: 0.2; }
+  #map path.d.hot { stroke: var(--hot); stroke-width: 1.5; }
+  #map path.d.pin { stroke: var(--accent); stroke-width: 2.4; }
+  @keyframes flash { 0%, 40% { fill: var(--flash); fill-opacity: 0.5; stroke: var(--flash); stroke-width: 1.2px; } 100% { } }
+  #map path.d.flash { animation: flash 2.6s ease-in-out both; }
+  @media (prefers-reduced-motion: reduce) { #map path.d.flash { animation: flash 2.6s steps(1, end) both; } }
+  .mapbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 20px; padding-top: 10px; border-top: 1px solid var(--hair); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: var(--t-s); color: var(--ink-2); }
+  .sw { display: inline-block; width: 12px; height: 12px; vertical-align: -2px; margin-right: 6px; border: 1px solid var(--ring); }
+  .zoombtns { display: flex; border: 1px solid var(--ink); }
+  .zoombtns button { font: inherit; font-size: var(--t-s); border: 0; border-left: 1px solid var(--ink); background: transparent; color: var(--ink); padding: 4px 11px; cursor: pointer; }
+  .zoombtns button:first-child { border-left: 0; }
+  .zoombtns button:hover { background: var(--accent-soft); }
+  .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink-2); background: var(--page); }
+  .tip { position: fixed; pointer-events: none; z-index: 5; background: var(--page); color: var(--ink); border: 1px solid var(--ink); padding: 8px 10px; font-size: var(--t-s); max-width: 270px; }
+  .tip b { display: block; font-size: var(--t-m); }
+  .tip .m { color: var(--ink-2); }
+  aside { display: grid; gap: 28px; min-width: 0; }
+  .panel { display: grid; gap: 10px; border-top: 1px solid var(--ink); padding-top: 10px; min-width: 0; }
+  .panel h2 { font-size: var(--t-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); margin: 0; font-weight: 700; }
+  .panel p { margin: 0; }
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .stat .v { font-size: var(--t-xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .stat .k { color: var(--ink-2); font-size: var(--t-s); line-height: 1.3; margin-top: 5px; }
+  .detail .nm { font-size: var(--t-l); font-weight: 700; line-height: 1.2; }
+  .detail .where { color: var(--ink-2); font-size: var(--t-s); }
+  .kv { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; font-size: var(--t-s); }
+  .kv dt { color: var(--ink-2); }
+  .kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .hint { color: var(--muted); font-size: var(--t-s); }
+  .spark { width: 100%; height: 76px; display: block; }
+  .strip { width: 100%; height: 42px; display: block; }
+  .season { width: 100%; max-width: 440px; height: auto; display: block; }
+  .stats .wide { grid-column: 1 / -1; display: grid; gap: 6px; }
+  .slegend { font-size: var(--t-xs); gap: 4px 12px; }
+  .list { max-height: 280px; overflow: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: var(--t-s); font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 5px 8px 5px 0; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  th { color: var(--muted); font-weight: 700; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.06em; position: sticky; top: 0; background: var(--page); }
+  td.r, th.r { text-align: right; padding-right: 0; }
+  td.r + td, th.r + th { padding-left: 12px; }
+  td .sm { display: block; color: var(--ink-2); font-size: var(--t-xs); }
+  tr.click { cursor: pointer; }
+  tr.click:hover td { background: var(--accent-soft); }
+  #map .clab { font-family: var(--sans); font-weight: 700; fill: var(--ink); paint-order: stroke; stroke: var(--page); stroke-width: 3px; stroke-linejoin: round; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .names { font-size: var(--t-s); color: var(--ink); }
+  .names .sm { color: var(--ink-2); }
+  .textbtn { font: inherit; font-size: var(--t-s); background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; justify-self: start; }
+  .foot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 32px; border-top: 2px solid var(--ink); padding-top: 14px; font-size: var(--t-s); color: var(--ink-2); }
+  @media (max-width: 860px) { .foot { grid-template-columns: 1fr; } }
+  .foot section { min-width: 0; display: grid; gap: 6px; align-content: start; }
+  .foot h3 { font-size: var(--t-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); margin: 0; font-weight: 700; }
+  .foot p { margin: 0; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 700; }
+  .foot a { color: var(--ink); text-underline-offset: 2px; }
+  .err { color: var(--ink); background: var(--page); border: 1px solid var(--ink); padding: 14px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (max-width: 520px) { h1 { font-size: 2.1rem; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Belt District Atlas</h1>
+    <div class="seg theme" role="group" aria-label="Theme">
+      <button id="t-light" type="button" aria-pressed="true">Light</button>
+      <button id="t-dark" type="button" aria-pressed="false">Dark</button>
+    </div>
+  </header>
+
+  <div class="controls" role="group" aria-label="Map controls">
+    <div class="ctl"><label for="country">Country</label><select id="country"><option value="-1">All 9 countries</option></select></div>
+    <div class="ctl"><span class="lbl" id="lvllbl">Level</span>
+      <div class="seg" role="group" aria-labelledby="lvllbl">
+        <button id="l-dist" type="button" aria-pressed="true">Districts</button>
+        <button id="l-reg" type="button" aria-pressed="false">Regions</button>
+      </div>
+    </div>
+    <div class="ctl"><span class="lbl" id="viewlbl">Show</span>
+      <div class="seg" role="group" aria-labelledby="viewlbl">
+        <button id="v-cases" type="button" aria-pressed="true">Cases</button>
+        <button id="v-thr" type="button" aria-pressed="false">Thresholds</button>
+        <button id="v-season" type="button" aria-pressed="false">Season</button>
+        <button id="v-bounds" type="button" aria-pressed="false">Boundary history</button>
+      </div>
+    </div>
+    <div class="ctl" id="periodctl"><span class="lbl" id="perlbl">Period</span>
+      <div class="seg" role="group" aria-labelledby="perlbl">
+        <button id="p-week" type="button" aria-pressed="true">One week</button>
+        <button id="p-year" type="button" aria-pressed="false">Whole year</button>
+      </div>
+    </div>
+    <div class="break" aria-hidden="true"></div>
+    <div class="ctl" id="yearctl"><label for="year">Year</label><input id="year" type="range" min="2021" max="2026" step="1" value="2025"><span class="yr" id="yearout">2025</span></div>
+    <div class="ctl" id="weekctl"><label for="week">Week</label><input id="week" type="range" min="1" max="52" step="1" value="11"><span class="yr" id="weekout">11</span><span class="dates" id="weekdates"></span></div>
+    <button type="button" class="playbtn" id="play" aria-pressed="false">Play</button>
+  </div>
+
+  <div class="main">
+    <div class="mapcard">
+      <svg id="map" role="img" aria-label="Map of health districts and regions"></svg>
+      <div class="loading" id="loading">Loading district and region outlines&hellip;</div>
+      <div class="mapbar">
+        <div class="legend" id="legend"></div>
+        <div class="zoombtns"><button type="button" id="zin" aria-label="Zoom in">+</button><button type="button" id="zout" aria-label="Zoom out">&minus;</button><button type="button" id="zreset">Fit</button></div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="panel"><h2 id="sumtitle">Summary</h2><div class="stats" id="stats"></div></div>
+      <div class="panel detail" id="detail"><h2>District</h2><p class="hint">Hover over the map for details. Click to keep one here, or Cmd-click (Ctrl-click) to add several and see their totals.</p></div>
+      <div class="panel"><h2 id="list1title">Most cases</h2><div class="list" id="list1"></div></div>
+      <div class="panel"><h2 id="list2title">Dashboard districts with no outline</h2><div class="list" id="list2"></div></div>
+      <div class="panel" id="chadpanel" hidden><h2 id="chadtitle">Chad's district list</h2><div class="list" id="chadlist"></div></div>
+    </aside>
+  </div>
+
+  <footer class="foot">
+    <section>
+      <h3>How to read it</h3>
+      <p><b>Cases</b> are suspected meningitis cases reported to WHO's meningitis dashboard, for one week or the whole year. Districts with no cases are left blank; hatching means no report.</p>
+      <p><b>Thresholds</b> are the dashboard's alerts and epidemics: epidemic at 10 or more cases per 100,000 people in a week, alert at 3 to 10 per 100,000 with at least 2 cases. Over a whole year, the colour counts the weeks spent over a threshold.</p>
+      <p><b>Season</b> shows how bunched each district's cases are in the calendar, in an average year of 2021&ndash;25: each week is averaged over the years that reported it. Strength runs from 0, cases spread evenly through the year, to 1, all of them in the same week. A clear season is 0.5 or more, some season 0.25 to 0.5, and little or no season under 0.25. Districts with fewer than 20 cases get no class. The chart splits each week's cases into those that came in weeks the district was over the threshold and the rest.</p>
+      <p><b>Boundary history</b> shows WHO's district and region outlines for each year from 2015, for all 26 countries of the meningitis belt; the other views cover the nine study countries. Outlines that changed from the year before flash orange.</p>
+      <p><b>Selecting:</b> click a district or region to keep its details on the right. Cmd-click (Ctrl-click on Windows) to select several and see their totals. Esc clears the selection.</p>
+    </section>
+    <section>
+      <h3>Where the sources disagree</h3>
+      <p><b>Chad</b> lists far more districts in the dashboard (199 in 2026) than WHO's map has outlines (126, from 2017), so it is shown by its 23 provinces, each adding up all its districts.</p>
+      <p><b>Districts with no outline</b> on WHO's map are counted in their region and named when you hover over it. They are never drawn on a guessed shape.</p>
+      <p><b>Split districts</b> such as Cotonou I&ndash;VI and Bamako's communes are drawn on the original district's outline, with their cases added up.</p>
+      <p><b>Boundary dates:</b> WHO's map dates a change to when the map was updated, often years late. Its records start in 2000. The first change it records is dated 2011 (Sudan and South Sudan), and 2016 in the nine study countries, where Ghana's 2012 districts appear only from 2018. It shows no change anywhere in the belt after 2020, so later ones appear only in the dashboard's district lists.</p>
+      <p><b>Names</b>: the dashboard and WHO's map share no district codes, so districts are matched by name. Most match exactly; each of the others (another spelling, an abbreviation, a renamed district) was checked one by one.</p>
+    </section>
+    <section>
+      <h3>Sources</h3>
+      <p>Cases, alerts and epidemics: WHO meningitis dashboard, downloaded 29 September 2026.</p>
+      <p>District and region outlines: WHO's polio programme map.</p>
+      <p>Background map: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.</p>
+    </section>
+  </footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const BRK = {
+    district: { week: [1, 2, 5, 10, 20, 50], year: [1, 3, 10, 30, 100, 300] },
+    region: { week: [1, 5, 10, 25, 50, 100], year: [1, 10, 30, 100, 300, 1000] },
+  };
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const state = { level: "district", view: "cases", period: "week", year: 2025, week: 11, country: -1, pinned: null, hover: null, sel: new Set() };
+  let geo, rgeo, base, borders, stats, feats, rfeats, paths, rpaths, svg, g, zoom, width = 1000, height = 500, pathGen, projection;
+  let prevYear = null, prevLevel = null, flashTimer = null, playTimer = null, lastChanged = 0, zoomK = 1;
+  // v11: Chad is drawn by province at the district level (its district list changes every year and most new districts have no outline)
+  let CHAD = -1, distFeats = [], clabels = null;
+  // the rest of the meningitis belt (17 countries): outlines only, shown in the Boundary history view
+  let NSTUDY = 9, ALLC = [], belt = null, bfeats = [], brfeats = [], bpaths = null, brpaths = null, beltReady = false, beltLoad = null, beltLayers = null, K0 = 1, studyT = null;
+  const byKey = new Map();
+  const countryName = (ci) => ALLC[ci] || "";
+  const wcache = new Map();
+  // light by default; the choice is remembered in this browser
+  function setTheme(t, save) {
+    document.documentElement.dataset.theme = t;
+    $("t-light").setAttribute("aria-pressed", t === "light"); $("t-dark").setAttribute("aria-pressed", t === "dark");
+    if (save) try { localStorage.setItem("atlas-theme", t); } catch (e) {}
+  }
+  setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light", false);
+  $("t-light").onclick = () => setTheme("light", true);
+  $("t-dark").onclick = () => setTheme("dark", true);
+
+  const fmt = (n) => (n == null ? "\u2014" : n.toLocaleString("en-GB"));
+  const fmtDate = (d) => {
+    if (!d || d >= 99991231) return "still current";
+    const y = Math.floor(d / 10000), m = Math.floor(d / 100) % 100, day = d % 100;
+    return day + " " + MONTHS[m - 1] + " " + y;
+  };
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const mid = (y) => y * 10000 + 701;
+  const valid = (f, y) => f.properties.s <= mid(y) && mid(y) < f.properties.e;
+  const cls = (c, br) => { let k = 0; for (let i = 0; i < br.length; i++) if (c >= br[i]) k = i; return k; };
+  const labelsFor = (br) => br.map((b, i) => (i === br.length - 1 ? b + "+" : (br[i + 1] - 1 === b ? String(b) : b + "\u2013" + (br[i + 1] - 1))));
+  const isReg = () => state.level === "region";
+  const F = () => {
+    const base = isReg() ? rfeats : distFeats;
+    return state.view === "bounds" && beltReady ? base.concat(isReg() ? brfeats : bfeats) : base;
+  };
+  const allSels = () => [paths, rpaths].concat(bpaths ? [bpaths, brpaths] : []);
+  const isChadProv = (f) => f.kind === "r" && f.properties.c === CHAD;
+  const chadProvAtDistrict = (f) => isChadProv(f) && !isReg();
+  const unitWord = (plural) => (isReg() ? (plural ? "regions" : "region") : state.country === CHAD ? (plural ? "provinces" : "province") : (plural ? "districts" : "district"));
+  const statOf = (f, y) => ((f.kind === "r" ? stats.byRegion : stats.byOutline)[f.id] || {})[y] || null;
+  const nweeksOf = (y) => stats.nweeks[y] || 52;
+  const parseW = (s) => s.split(",").map((v) => (v === "" ? null : +v));
+  function weekly(f, y) {
+    const st = statOf(f, y); if (!st) return null;
+    const k = f.kind + f.id + "|" + y; let a = wcache.get(k);
+    if (!a) { a = parseW(st[3]); wcache.set(k, a); }
+    return a;
+  }
+  const deathsIn = (sparse, w) => { let d = 0; (sparse || []).forEach(([wk, n]) => { if (wk === w) d += n; }); return d; };
+  const dataView = () => state.view === "cases" || state.view === "thr";
+  const weekMode = () => dataView() && state.period === "week";
+  const TBRK = { district: [1, 2, 4, 8, 12, 20], regionWeek: [1, 2, 3, 5, 10, 20], regionYear: [1, 5, 10, 25, 50, 100] };
+  const STATUS_TXT = ["below the threshold", "in alert", "in epidemic"];
+  // threshold status per week (the dashboard's alerts and epidemics, pulled by v257): districts give 2 epidemic, 1 alert, 0 below, null no report;
+  // regions give [districts over the threshold, districts in epidemic] per week
+  function status(f, y) {
+    const st = statOf(f, y); if (!st) return null;
+    const k = "s" + f.kind + f.id + "|" + y; let a = wcache.get(k);
+    if (!a) { a = f.kind === "r" ? [parseW(st[5]), parseW(st[6])] : st[5].split("").map((c) => (c === "." ? null : +c)); wcache.set(k, a); }
+    return a;
+  }
+  const crossedWeeks = (s) => s.filter((v) => v === 1 || v === 2).length;
+  const pl = (n, one, many) => n + " " + (n === 1 ? one : many);
+  const sum = (a) => a.reduce((x, v) => x + (v || 0), 0);
+  // Season view (15 Oct 2026): the average year 2021-25 of each unit, as in the seasonality analysis. Each week is averaged
+  // over the years that reported it, and cases in weeks a district was over the threshold (alert or epidemic) are kept apart.
+  const SEASON_MIN = 20;
+  const SEASON_TXT = { clear: "clear season", some: "some season", little: "little or no season", few: "fewer than 20 cases" };
+  const SEASON_SHORT = { clear: "clear", some: "some", little: "little or none" };
+  const seasonView = () => state.view === "season";
+  const pctTxt = (x) => (x == null ? "\u2014" : Math.round(100 * x) + "%");
+  const fmt1 = (x) => (x >= 10 ? Math.round(x).toLocaleString("en-GB") : x.toFixed(1));
+  const yearsTxt = (s) => { const [a, b] = String(s || "").split("-"); return !a ? "2021\u201325" : a === b ? a : a + "\u2013" + b.slice(2); };
+  function seasonDecode(e) {
+    const ny = e[2] ? e[2].split("").map(Number) : new Array(52).fill(stats.seasons.years.length);
+    const cs = e[0] ? e[0].split(",").map(Number) : new Array(52).fill(0);
+    const os = e[1] ? e[1].split(",").map(Number) : new Array(52).fill(0);
+    return { c: cs.map((v, i) => (ny[i] ? v / ny[i] : 0)), o: os.map((v, i) => (ny[i] ? v / ny[i] : 0)), total: sum(cs), years: e[3] };
+  }
+  function seasonOf(f) {
+    const k = "z" + f.kind + f.id;
+    if (!wcache.has(k)) { const e = ((f.kind === "r" ? stats.seasons.r : stats.seasons.d) || {})[f.id]; wcache.set(k, e ? seasonDecode(e) : null); }
+    return wcache.get(k);
+  }
+  // units drawn for the same year don't overlap, so their average years add up
+  function seasonAdd(list) {
+    const out = { c: new Array(52).fill(0), o: new Array(52).fill(0), total: 0 };
+    list.forEach((s) => { if (!s) return; out.total += s.total; s.c.forEach((v, i) => { out.c[i] += v; out.o[i] += s.o[i]; }); });
+    return out;
+  }
+  const seasonCountries = () => seasonAdd(stats.countries.map((_, ci) => (inSel(ci) && (stats.seasons.c || {})[ci] ? seasonDecode(stats.seasons.c[ci]) : null)));
+  // strength: 0 when the cases are spread evenly through the year, 1 when they all fall in the same week
+  function seasonMeasures(s) {
+    const tot = sum(s.c); if (!tot) return { tot: 0, R: null, jan: null, out: null };
+    let cx = 0, sx = 0;
+    s.c.forEach((v, i) => { const t = (2 * Math.PI * (i + 0.5)) / 52; cx += v * Math.cos(t); sx += v * Math.sin(t); });
+    return { tot, R: Math.hypot(cx, sx) / tot, jan: sum(s.c.slice(0, 26)) / tot, out: sum(s.o) / tot };
+  }
+  function seasonClass(s) {
+    if (s.total < SEASON_MIN) return "few";
+    const R = seasonMeasures(s).R;
+    return R >= 0.5 ? "clear" : R >= 0.25 ? "some" : "little";
+  }
+  function seasonFill(f) {
+    const s = seasonOf(f); if (!s) return "url(#hatch)";
+    const k = seasonClass(s);
+    return k === "few" ? "transparent" : "var(--s" + { little: 1, some: 2, clear: 3 }[k] + ")";
+  }
+  function weekMonths(w) {
+    const a = isoMonday(2025, w), b = new Date(+a + 6 * 864e5);
+    return MONTHS[a.getUTCMonth()] + (b.getUTCMonth() !== a.getUTCMonth() ? "\u2013" + MONTHS[b.getUTCMonth()] : "");
+  }
+  // one bar per week of the year: cases in weeks below the threshold, with the cases in weeks over it on top
+  function seasonChart(s, big) {
+    const W = 300, H = big ? 120 : 96, top = 13, bottom = 15, ph = H - top - bottom, bw = (W - 2) / 52;
+    const max = Math.max(0.1, ...s.c);
+    let r = "";
+    MONTHS.forEach((m, k) => { r += '<text x="' + (2 + ((k * 52) / 12) * bw).toFixed(1) + '" y="' + (H - 3) + '" font-size="9" fill="var(--muted)">' + m.charAt(0) + "</text>"; });
+    s.c.forEach((v, i) => {
+      if (!v) return;
+      const x = (1 + i * bw + 0.5).toFixed(1), bwid = Math.max(1, bw - 1).toFixed(1);
+      const hAll = Math.max(1.5, (v / max) * ph), hOut = Math.min(hAll, s.o[i] ? Math.max(1, (s.o[i] / max) * ph) : 0), hCalm = hAll - hOut;
+      r += "<g><title>Week " + (i + 1) + " (" + weekMonths(i + 1) + "): " + fmt1(v) + " cases a week on average" + (s.o[i] ? ", " + fmt1(s.o[i]) + " of them in weeks over the threshold" : "") + "</title>";
+      if (hCalm > 0.5) r += '<rect x="' + x + '" y="' + (top + ph - hCalm).toFixed(1) + '" width="' + bwid + '" height="' + hCalm.toFixed(1) + '" fill="var(--calm)"/>';
+      if (hOut) r += '<rect x="' + x + '" y="' + (top + ph - hAll).toFixed(1) + '" width="' + bwid + '" height="' + Math.max(0.8, hOut - (hCalm > 0.5 ? 1 : 0)).toFixed(1) + '" fill="var(--outb)"/>';
+      r += "</g>";
+    });
+    return '<div class="hint">Average suspected cases in each week of the year, 2021\u201325</div>' +
+      '<svg class="season" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Average suspected cases in each week of the year, 2021 to 2025">' + r +
+      '<line x1="0" x2="' + W + '" y1="' + (top + ph) + '" y2="' + (top + ph) + '" stroke="var(--axis)" stroke-width="1"/>' +
+      '<text x="' + (W - 1) + '" y="9" font-size="9" fill="var(--muted)" text-anchor="end">peak ' + fmt1(max) + " cases a week</text></svg>" +
+      '<div class="legend slegend"><span><span class="sw" style="background:var(--calm)"></span>cases from districts below the threshold that week</span>' +
+      '<span><span class="sw" style="background:var(--outb)"></span>cases from districts over it that week (alert or epidemic)</span></div>';
+  }
+  function thrFill(f) {
+    const s = status(f, state.year); if (!s) return "url(#hatch)";
+    if (chadProvAtDistrict(f)) {  // a province is in epidemic if any of its districts is, otherwise in alert if any is
+      if (weekMode()) {
+        const e = s[1][state.week - 1] || 0, a = s[0][state.week - 1] || 0, wkly = weekly(f, state.year);
+        if (!a && wkly && wkly[state.week - 1] == null) return "url(#hatch)";
+        return e ? "var(--epi)" : a ? "var(--alert)" : "transparent";
+      }
+      const [n, e] = chadYear(f, state.year); return e ? "var(--epi)" : n ? "var(--alert)" : "transparent";
+    }
+    if (f.kind === "d") {
+      if (weekMode()) { const v = s[state.week - 1]; return v == null ? "url(#hatch)" : v === 2 ? "var(--epi)" : v === 1 ? "var(--alert)" : "transparent"; }
+      if (s.every((v) => v == null)) return "url(#hatch)";
+      const n = crossedWeeks(s); return n ? "var(--r" + (cls(n, TBRK.district) + 1) + ")" : "transparent";
+    }
+    const n = weekMode() ? s[0][state.week - 1] || 0 : sum(s[0]);
+    return n ? "var(--r" + (cls(n, weekMode() ? TBRK.regionWeek : TBRK.regionYear) + 1) + ")" : "transparent";
+  }
+  const breaks = () => BRK[state.level][weekMode() ? "week" : "year"];
+  function isoMonday(y, w) {
+    const jan4 = Date.UTC(y, 0, 4), dow = (new Date(jan4).getUTCDay() + 6) % 7;
+    return new Date(jan4 - dow * 864e5 + (w - 1) * 7 * 864e5);
+  }
+  function weekDates(y, w) {
+    const a = isoMonday(y, w), b = new Date(+a + 6 * 864e5);
+    const f = (d) => d.getUTCDate() + " " + MONTHS[d.getUTCMonth()];
+    return f(a) + "\u2013" + f(b);
+  }
+  function inSel(ci) { return state.country < 0 || ci === state.country; }
+
+  function fillFor(f) {
+    if (state.view === "bounds") return "transparent";
+    if (state.view === "thr") return thrFill(f);
+    if (seasonView()) return seasonFill(f);
+    const st = statOf(f, state.year);
+    if (!st) return "url(#hatch)";
+    const v = weekMode() ? weekly(f, state.year)[state.week - 1] : st[0];
+    if (v == null) return "url(#hatch)";
+    return v === 0 ? "var(--zero)" : "var(--q" + (cls(v, breaks()) + 1) + ")";
+  }
+
+  function fillCountries() {
+    const sel = $("country"), inBounds = state.view === "bounds" && beltReady, want = String(inBounds ? ALLC.length : NSTUDY);
+    if (!inBounds && state.country >= NSTUDY) state.country = -1;
+    if (sel.dataset.n !== want) {
+      sel.innerHTML = "";
+      const opt = (parent, v, t) => { const o = document.createElement("option"); o.value = v; o.textContent = t; parent.appendChild(o); };
+      opt(sel, -1, inBounds ? "All " + ALLC.length + " belt countries" : "All " + NSTUDY + " countries");
+      if (inBounds) {
+        const g1 = document.createElement("optgroup"), g2 = document.createElement("optgroup");
+        g1.label = "Study countries"; g2.label = "Rest of the belt (outlines only)";
+        ALLC.forEach((c, i) => opt(i < NSTUDY ? g1 : g2, i, c)); sel.appendChild(g1); sel.appendChild(g2);
+      } else for (let i = 0; i < NSTUDY; i++) opt(sel, i, ALLC[i]);
+      sel.dataset.n = want;
+    }
+    sel.value = state.country;
+  }
+
+  function syncControls() {
+    fillCountries();
+    const yr = $("year"), wk = $("week");
+    $("l-dist").setAttribute("aria-pressed", !isReg());
+    $("l-reg").setAttribute("aria-pressed", isReg());
+    $("v-cases").setAttribute("aria-pressed", state.view === "cases");
+    $("v-thr").setAttribute("aria-pressed", state.view === "thr");
+    $("v-bounds").setAttribute("aria-pressed", state.view === "bounds");
+    $("v-season").setAttribute("aria-pressed", seasonView());
+    $("p-week").setAttribute("aria-pressed", state.period === "week");
+    $("p-year").setAttribute("aria-pressed", state.period === "year");
+    $("periodctl").hidden = !dataView();
+    $("weekctl").hidden = !weekMode();
+    $("yearctl").hidden = seasonView(); $("play").hidden = seasonView();
+    if (dataView()) { yr.min = 2021; yr.max = 2026; } else { yr.min = 2015; yr.max = 2026; }
+    yr.value = state.year;
+    wk.max = nweeksOf(state.year);
+    if (state.week > +wk.max) state.week = +wk.max;
+    wk.value = state.week;
+    $("yearout").textContent = state.year;
+    $("weekout").textContent = state.week;
+    $("weekdates").textContent = weekDates(state.year, state.week);
+  }
+
+  function setView(v) {
+    stopPlay();
+    const before = state.year, wasBounds = state.view === "bounds";
+    if (v === "bounds") loadBelt();
+    // the Season view averages 2021-25 on the latest full year's outlines; the other views get their year back
+    if (v === "season" && state.view !== "season") { state.yearBack = state.year; state.year = stats.seasons.years[stats.seasons.years.length - 1]; }
+    else if (v !== "season" && state.view === "season" && state.yearBack) state.year = state.yearBack;
+    state.view = v;
+    if (v !== "bounds" && state.year < 2021) state.year = 2025;
+    if (state.year !== before) prevYear = null;
+    render();
+    if (wasBounds !== (v === "bounds")) fitSelection();
+  }
+  function setPeriod(p) { stopPlay(); state.period = p; render(); }
+  function setLevel(l) { stopPlay(); state.level = l; state.pinned = null; state.sel.clear(); state.hover = null; render(); }
+
+  function render() {
+    syncControls();
+    svg.classed("bounds", state.view === "bounds");
+    zoom.scaleExtent([state.view === "bounds" ? 1 : K0 * 0.85, 40]);
+    const y = state.year;
+    const onLevel = (f) => (isReg() ? f.kind === "r" : f.kind === "d" ? f.properties.c !== CHAD : f.properties.c === CHAD);
+    const shown = (f) => onLevel(f) && valid(f, y) && (f.properties.c < NSTUDY || state.view === "bounds");
+    if (state.pinned && !shown(state.pinned)) state.pinned = null;
+    state.sel.forEach((f) => { if (!shown(f)) state.sel.delete(f); });
+    if (state.sel.size === 1) { state.pinned = [...state.sel][0]; state.sel.clear(); }
+    const picked = (f) => f === state.pinned || state.sel.has(f);
+    allSels().forEach((sel) => {
+      sel.attr("display", (f) => (shown(f) ? null : "none"))
+        .style("fill", (f) => (onLevel(f) ? fillFor(f) : null))
+        .classed("dim", (f) => state.country >= 0 && f.properties.c !== state.country)
+        .classed("pin", picked);
+      sel.filter((f) => !onLevel(f)).classed("flash", false);
+    });
+    allSels().forEach((sel) => sel.filter(picked).raise());
+    renderChadLabels();
+    const step = prevYear !== null && prevYear !== y && prevLevel === state.level;
+    const changed = step ? F().filter((f) => valid(f, y) && !valid(f, prevYear) && inSel(f.properties.c) && !f.properties.k) : [];
+    if (step) lastChanged = changed.length;
+    if (prevLevel !== state.level) lastChanged = 0;
+    prevYear = y; prevLevel = state.level;
+    if (changed.length) flash(new Set(changed));
+    renderLegend(); renderSummary(); renderDetail(); renderLists();
+  }
+
+  // outlines that differ from the previous year shown flash, then fade back into the map
+  function flash(set) {
+    const nodes = allSels().flatMap((s) => s.filter((f) => set.has(f)).nodes());
+    allSels().forEach((s) => s.classed("flash", false));
+    void svg.node().getBoundingClientRect();
+    nodes.forEach((n) => { n.classList.add("flash"); n.parentNode.appendChild(n); });
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => nodes.forEach((n) => n.classList.remove("flash")), 2700);
+  }
+
+  function stopPlay() {
+    if (!playTimer) return;
+    clearInterval(playTimer); playTimer = null;
+    $("play").textContent = "Play"; $("play").setAttribute("aria-pressed", "false");
+  }
+  function startPlay() {
+    const byWeek = weekMode();
+    $("play").textContent = "Pause"; $("play").setAttribute("aria-pressed", "true");
+    if (byWeek) {
+      if (state.week >= nweeksOf(state.year)) { state.week = 1; render(); }
+      playTimer = setInterval(() => {
+        if (state.week >= nweeksOf(state.year)) { stopPlay(); return; }
+        state.week += 1; render();
+      }, 900);
+    } else {
+      const lo = +$("year").min, hi = +$("year").max;
+      if (state.year >= hi) { state.year = lo; prevYear = null; render(); }
+      playTimer = setInterval(() => {
+        if (state.year >= hi) { stopPlay(); return; }
+        state.year += 1; render();
+      }, 2600);
+    }
+  }
+
+  // whole year: how many of a Chad province's districts were over the threshold at least once, and how many reached epidemic
+  function chadYear(f, y) {
+    let n = 0, e = 0;
+    (((stats.chadNames || {})[f.id] || {})[y] || []).forEach(([, st]) => { if (/[12]/.test(st)) n++; if (st.indexOf("2") >= 0) e++; });
+    return [n, e];
+  }
+  // Chad province labels: how many districts were over the threshold (Thresholds view, district level)
+  function renderChadLabels() {
+    if (!clabels) return;
+    const y = state.year, w = state.week;
+    clabels.attr("display", (f) => {
+      if (isReg() || state.view !== "thr" || !valid(f, y) || !inSel(f.properties.c)) return "none";
+      const s = status(f, y); if (!s) return "none";
+      return (weekMode() ? s[0][w - 1] || 0 : chadYear(f, y)[0]) > 0 ? null : "none";
+    }).text((f) => {
+      const s = status(f, y); if (!s) return "";
+      return weekMode() ? String(s[0][w - 1] || 0) : String(chadYear(f, y)[0]);
+    });
+  }
+  // the districts behind a Chad province's colour: [name, weeks over (or status this week), epidemic weeks]
+  function chadDistricts(f, y) {
+    const list = ((stats.chadNames || {})[f.id] || {})[y] || [], w = state.week;
+    return list.map(([nm, st, wk]) => {
+      const sv = st.split("").map((c) => (c === "." ? null : +c));
+      return weekMode() && state.view === "thr" ? [nm, sv[w - 1], parseW(wk)[w - 1]] : [nm, crossedWeeks(sv), sv.filter((v) => v === 2).length];
+    }).filter((r) => (weekMode() && state.view === "thr" ? r[1] === 1 || r[1] === 2 : r[1] > 0));
+  }
+  function chadNamesHtml(f, y, max) {
+    const rows = chadDistricts(f, y); if (!rows.length) return "";
+    const wk = weekMode() && state.view === "thr";
+    rows.sort((a, b) => (wk ? b[1] - a[1] : b[1] - a[1]) || a[0].localeCompare(b[0]));
+    const shown = rows.slice(0, max).map((r) => esc(r[0]) + ' <span class="sm">' + (wk ? STATUS_TXT[r[1]].replace("in ", "") : pl(r[1], "week", "weeks") + (r[2] ? ", " + r[2] + " epidemic" : "")) + "</span>");
+    return '<div class="names">' + shown.join("; ") + (rows.length > max ? "; +" + (rows.length - max) + " more" : "") + "</div>";
+  }
+  // districts with no outline that a region counts (not Chad): [name, cases, statusString]
+  function extrasHtml(f, y) {
+    const list = ((stats.regionExtras || {})[f.id] || {})[y] || []; if (!list.length) return "";
+    const w = state.week, wk = weekMode();
+    const parts = list.map(([nm, cases, st]) => {
+      const sv = (st || "").split("").map((c) => (c === "." ? null : +c));
+      if (state.view === "thr") { const v = wk ? sv[w - 1] : crossedWeeks(sv); return v ? esc(nm) + ' <span class="sm">' + (wk ? STATUS_TXT[v].replace("in ", "") : pl(v, "week", "weeks") + " over") + "</span>" : esc(nm); }
+      return esc(nm);
+    });
+    return '<div class="names"><span class="sm">No outline of their own, counted here: </span>' + parts.join("; ") + "</div>";
+  }
+  function unitsHtml(f, y) {
+    if (f.kind !== "d") return "";
+    const dn = ((stats.dashNames || {})[f.id] || {})[y] || [];
+    return dn.length > 1 ? '<div class="names"><span class="sm">Dashboard units on this outline (' + dn.length + "): </span>" + dn.map(esc).join(", ") + "</div>" : "";
+  }
+
+  function renderLegend() {
+    const L = $("legend"), y = state.year;
+    const hatch = '<span><svg width="14" height="10" style="vertical-align:-1px;margin-right:5px;border:1px solid var(--ring);border-radius:2px"><rect width="14" height="10" fill="url(#hatch)"/></svg>no report</span>';
+    if (state.view === "cases") {
+      L.innerHTML = '<span class="lbl">Cases per ' + unitWord(false) + (weekMode() ? " in week " + state.week + ", " + y : " in " + y) + "</span>" +
+        labelsFor(breaks()).map((t, i) => '<span><span class="sw" style="background:var(--q' + (i + 1) + ')"></span>' + t + "</span>").join("") +
+        '<span><span class="sw" style="background:transparent;border-color:var(--ink-2)"></span>0 (no fill)</span>' + hatch;
+    } else if (state.view === "thr") {
+      const none = '<span><span class="sw" style="background:transparent;border-color:var(--ink-2)"></span>';
+      if (!isReg() && weekMode()) {
+        L.innerHTML = '<span class="lbl">Threshold status, week ' + state.week + ", " + y + '</span><span><span class="sw" style="background:var(--epi)"></span>epidemic (10+ per 100,000)</span>' +
+          '<span><span class="sw" style="background:var(--alert)"></span>alert (3\u201310 per 100,000, 2+ cases)</span>' + none + "below the threshold</span>" + hatch;
+      } else {
+        const br = isReg() ? (weekMode() ? TBRK.regionWeek : TBRK.regionYear) : TBRK.district;
+        const lbl = isReg() ? (weekMode() ? "Districts over the threshold, week " + state.week + ", " + y : "District-weeks over the threshold in " + y) : "Weeks over the threshold (alert or epidemic) in " + y;
+        L.innerHTML = '<span class="lbl">' + lbl + "</span>" + labelsFor(br).map((t, i) => '<span><span class="sw" style="background:var(--r' + (i + 1) + ')"></span>' + t + "</span>").join("") + none + "none</span>" + hatch;
+      }
+    } else if (seasonView()) {
+      L.innerHTML = '<span class="lbl">Season, 2021\u201325: how bunched each ' + unitWord(false) + "'s cases are in the year</span>" +
+        ["little or no season (under 0.25)", "some season (0.25\u20130.5)", "clear season (0.5 or more)"].map((t, i) => '<span><span class="sw" style="background:var(--s' + (i + 1) + ')"></span>' + t + "</span>").join("") +
+        '<span><span class="sw" style="background:transparent;border-color:var(--ink-2)"></span>fewer than 20 cases</span>' + hatch;
+    } else {
+      L.innerHTML = '<span class="lbl">' + (isReg() ? "Region" : "District") + " outlines valid on 1 July " + y + '</span><span><span class="sw" style="background:transparent;border-color:var(--ink-2)"></span>outline</span>';
+    }
+    if (state.view === "bounds") L.innerHTML += '<span><span class="sw" style="background:var(--flash);opacity:0.6"></span>changed from the year before (flashes)</span>';
+    if (state.view === "bounds" && !beltReady) L.innerHTML += '<span class="lbl">Loading the rest of the belt\u2026</span>';
+    if (!isReg() && inSel(CHAD)) L.innerHTML += '<span class="lbl">Chad is drawn by province: cases are summed over its districts' + (state.view === "thr" ? (weekMode() ? "; red if any of its districts is in epidemic, yellow if any is in alert; the number is how many of its districts were over the threshold that week" : "; red if any of its districts was in epidemic at some point in the year, yellow if any was in alert; the number is how many of its districts were over the threshold at least once") : "") + "</span>";
+  }
+
+  function unmatchedFor(y) {
+    const um = [], src = isReg() ? stats.unplaced : stats.unmatched;
+    stats.countries.forEach((c, ci) => { if (inSel(ci) && !(ci === CHAD && !isReg())) ((src[ci] || {})[y] || []).forEach((u) => um.push([c, ...u])); });
+    return um;  // [country, name, region, cases, deaths, weeklyString, deathsSparse, statusString]
+  }
+
+  function renderSummary() {
+    const y = state.year, S = $("stats"), w = state.week;
+    const shown = F().filter((f) => valid(f, y) && inSel(f.properties.c));
+    const cname = state.country < 0 ? (state.view === "bounds" && beltReady ? "All " + ALLC.length + " belt countries" : "All " + NSTUDY + " countries") : countryName(state.country);
+    let nDash = 0, nLinked = 0;
+    stats.countries.forEach((_, ci) => { if (inSel(ci)) { const s = (stats.summary[ci] || {})[y]; if (s) { nDash += s[0]; nLinked += ci === CHAD && !isReg() ? s[0] : s[1]; } } });
+    const leftover = unmatchedFor(y);
+    const missLabel = isReg() ? "dashboard districts not placed in a region" : "dashboard districts with no outline";
+    const missN = isReg() ? leftover.length : nDash - nLinked;
+    if (state.view === "cases" && weekMode()) {
+      $("sumtitle").textContent = cname + ", week " + w + " " + y;
+      let cases = 0, deaths = 0, rep = 0, pos = 0;
+      shown.forEach((f) => { const a = weekly(f, y); if (!a) return; const v = a[w - 1]; if (v != null) { rep++; cases += v; if (v > 0) pos++; } deaths += deathsIn(statOf(f, y)[4], w); });
+      leftover.forEach((u) => { const v = parseW(u[5])[w - 1]; if (v) cases += v; deaths += deathsIn(u[6], w); });
+      S.innerHTML = stat(fmt(cases), "suspected cases this week") + stat(fmt(deaths), "deaths this week") +
+        stat(fmt(pos), unitWord(true) + " with cases") + stat(fmt(rep), unitWord(true) + " that reported") + stat(fmt(missN), missLabel);
+    } else if (state.view === "cases") {
+      $("sumtitle").textContent = cname + ", " + y;
+      let cases = 0, deaths = 0;
+      shown.forEach((f) => { const st = statOf(f, y); if (st) { cases += st[0] || 0; deaths += st[1] || 0; } });
+      leftover.forEach((u) => { cases += u[3] || 0; deaths += u[4] || 0; });
+      S.innerHTML = stat(fmt(cases), "suspected cases") + stat(fmt(deaths), "deaths") +
+        stat(fmt(nDash), "districts in the dashboard") + stat(fmt(missN), missLabel) + stat(fmt(shown.length), unitWord(true) + " on WHO's map");
+    } else if (state.view === "thr") {
+      let over = 0, epi = 0;
+      stats.countries.forEach((_, ci) => {
+        const t = inSel(ci) && (stats.thr[ci] || {})[y]; if (!t) return;
+        const a = parseW(t[0]), e = parseW(t[1]);
+        if (weekMode()) { over += a[w - 1] || 0; epi += e[w - 1] || 0; } else { over += sum(a); epi += sum(e); }
+      });
+      // districts with no outline of their own, Chad's included (they are counted inside its provinces)
+      const noOutline = stats.countries.reduce((k, _, ci) => k + (inSel(ci) ? ((stats.unmatched[ci] || {})[y] || []).filter((u) => { const c = (u[6] || "").split(""); return weekMode() ? c[w - 1] === "1" || c[w - 1] === "2" : c.some((x) => x === "1" || x === "2"); }).length : 0), 0);
+      $("sumtitle").textContent = cname + (weekMode() ? ", week " + w + " " : ", ") + y;
+      S.innerHTML = weekMode()
+        ? stat(fmt(over), "districts over the threshold") + stat(fmt(epi), "of them in epidemic") + stat(fmt(over - epi), "in alert") + (isReg() ? "" : stat(fmt(noOutline), "of them with no outline"))
+        : isReg() ? stat(fmt(over), "district-weeks over the threshold") + stat(fmt(epi), "of them in epidemic") + stat(fmt(over - epi), "in alert")
+        : (() => { let n = 0, e = 0; stats.countries.forEach((_, ci) => { const t = inSel(ci) && ((stats.thrN || {})[ci] || {})[y]; if (t) { n += t[0]; e += t[1]; } });
+            return stat(fmt(n), "districts over the threshold at least once") + stat(fmt(e), "of them reached epidemic") + stat(fmt(n - e), "alert only") + stat(fmt(noOutline), "of them with no outline"); })();
+    } else if (seasonView()) {
+      $("sumtitle").textContent = cname + ", average year 2021\u201325";
+      const agg = seasonCountries(), m = seasonMeasures(agg), k = { clear: 0, some: 0, little: 0, few: 0 };
+      shown.forEach((f) => { const s = seasonOf(f); if (s) k[seasonClass(s)]++; });
+      S.innerHTML = stat(fmt(Math.round(m.tot)), "suspected cases a year") + stat(pctTxt(m.jan), "of them in January\u2013June") +
+        stat(pctTxt(m.out), "in weeks a district was over the threshold") + stat(fmt(k.clear), unitWord(true) + " with a clear season") +
+        stat(fmt(k.some), "with some season") + stat(fmt(k.little), "with little or no season") +
+        '<div class="wide">' + seasonChart(agg, true) + "</div>";
+    } else {
+      $("sumtitle").textContent = cname + ", 1 July " + y;
+      const began = shown.filter((f) => Math.floor(f.properties.s / 10000) === y).length;
+      const ended = F().filter((f) => inSel(f.properties.c) && Math.floor(f.properties.e / 10000) === y - 1 && f.properties.e < 99991231).length;
+      let h = stat(fmt(shown.length), unitWord(true) + " on WHO's map") + stat(fmt(lastChanged), "changed from the last year shown") +
+        stat(fmt(began), "outlines new in " + y) + stat(fmt(ended), "retired at the end of " + (y - 1));
+      if (y >= 2021 && state.country >= 0 && state.country < NSTUDY) h += stat(fmt(nDash), "districts in the dashboard") + stat(fmt(missN), missLabel);
+      S.innerHTML = h;
+    }
+  }
+  const stat = (v, k) => '<div class="stat"><div class="v">' + v + '</div><div class="k">' + k + "</div></div>";
+
+  function spark(arr, nweeks, hi, color = "var(--q4)", unit = "cases") {
+    const W = 300, H = 76, pad = 14, bw = (W - 2) / nweeks;
+    const max = Math.max(1, ...arr.map((v) => v || 0));
+    let bars = "";
+    arr.forEach((v, i) => {
+      const w = i + 1, x = (1 + i * bw + 0.5).toFixed(1), bwid = Math.max(1, bw - 1).toFixed(1);
+      if (w === hi) bars += '<rect x="' + (1 + i * bw).toFixed(1) + '" y="0" width="' + bw.toFixed(1) + '" height="' + (H - pad) + '" fill="var(--accent-soft)"/>';
+      if (v) {
+        const h = Math.max(1.5, (v / max) * (H - pad - 6));
+        bars += '<rect x="' + x + '" y="' + (H - pad - h).toFixed(1) + '" width="' + bwid + '" height="' + h.toFixed(1) + '" rx="1" fill="' + (w === hi ? "var(--accent)" : color) + '"><title>Week ' + w + ": " + v + " " + unit + "</title></rect>";
+      }
+    });
+    return '<svg class="spark" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="Weekly cases">' + bars +
+      '<line x1="0" x2="' + W + '" y1="' + (H - pad) + '" y2="' + (H - pad) + '" stroke="var(--axis)" stroke-width="1"/>' +
+      '<text x="1" y="' + (H - 2) + '" font-size="9" fill="var(--muted)">week 1</text>' +
+      '<text x="' + (W - 1) + '" y="' + (H - 2) + '" font-size="9" fill="var(--muted)" text-anchor="end">week ' + nweeks + "</text>" +
+      '<text x="' + (W - 1) + '" y="9" font-size="9" fill="var(--muted)" text-anchor="end">peak ' + max + "</text></svg>";
+  }
+
+  function strip(s, nweeks, hi) {
+    const W = 300, H = 30, bw = (W - 2) / nweeks;
+    let r = "";
+    s.forEach((v, i) => {
+      const fill = v == null ? "var(--hair)" : v === 2 ? "var(--epi)" : v === 1 ? "var(--alert)" : "var(--cell0)", on = i + 1 === hi;
+      r += '<rect x="' + (1 + i * bw).toFixed(1) + '" y="' + (on ? 2 : 7) + '" width="' + Math.max(1, bw - 1.2).toFixed(1) + '" height="' + (on ? 24 : 14) + '" rx="1" fill="' + fill + '"' +
+        (on ? ' stroke="var(--ink)" stroke-width="1"' : "") + "><title>Week " + (i + 1) + ": " + (v == null ? "no report" : STATUS_TXT[v]) + "</title></rect>";
+    });
+    return '<svg class="strip" viewBox="0 0 ' + W + " " + (H + 12) + '" preserveAspectRatio="none" role="img" aria-label="Threshold status by week">' + r +
+      '<text x="1" y="' + (H + 10) + '" font-size="9" fill="var(--muted)">week 1</text><text x="' + (W - 1) + '" y="' + (H + 10) + '" font-size="9" fill="var(--muted)" text-anchor="end">week ' + nweeks + "</text></svg>";
+  }
+
+  // a click keeps one unit's details; Cmd-click (Ctrl-click) builds a selection whose totals are shown
+  function pick(f, add) {
+    if (!add) { state.sel.clear(); state.pinned = state.pinned === f ? null : f; return; }
+    if (!state.sel.size && state.pinned === f) { state.pinned = null; return; }
+    if (state.pinned) state.sel.add(state.pinned);
+    state.pinned = null;
+    if (state.sel.has(f)) state.sel.delete(f); else state.sel.add(f);
+  }
+
+  // the totals of every selected district or region, for the view and period on screen
+  function renderSelection() {
+    const D = $("detail"), y = state.year, w = state.week, wk = weekMode(), list = [...state.sel], n = nweeksOf(y);
+    const nP = list.filter(isChadProv).length, nD = list.length - nP;
+    const what = isReg() ? pl(list.length, "region", "regions") : [nD ? pl(nD, "district", "districts") : "", nP ? pl(nP, "Chad province", "Chad provinces") : ""].filter(Boolean).join(" and ");
+    let h = '<h2>Selection</h2><div class="nm">' + what + '</div><dl class="kv">', chart = "";
+    if (state.view === "cases") {
+      const tot = new Array(n).fill(null);
+      let cases = 0, deaths = 0, wd = 0, rep = 0, linked = 0;
+      list.forEach((f) => {
+        const st = statOf(f, y); if (!st) return;
+        linked++; cases += st[0] || 0; deaths += st[1] || 0; wd += deathsIn(st[4], w);
+        const a = weekly(f, y);
+        a.forEach((v, i) => { if (v != null) tot[i] = (tot[i] || 0) + v; });
+        if (a[w - 1] != null) rep++;
+      });
+      if (wk) h += "<dt>Week " + w + "</dt><dd>" + (tot[w - 1] == null ? "no report" : fmt(tot[w - 1]) + " cases \u00b7 " + fmt(wd) + " deaths") + "</dd><dt>Reported</dt><dd>" + rep + " of " + list.length + "</dd>";
+      h += "<dt>Year " + y + "</dt><dd>" + fmt(cases) + " cases \u00b7 " + fmt(deaths) + " deaths</dd>";
+      if (linked < list.length) h += "<dt>No data</dt><dd>" + (list.length - linked) + " of them in " + y + "</dd>";
+      if (tot.some((v) => v)) chart = spark(tot, n, wk ? w : 0);
+    } else if (state.view === "thr") {
+      const over = new Array(n).fill(0);
+      let al = 0, ep = 0, nOver = 0, nEpi = 0;
+      list.forEach((f) => {
+        const s = status(f, y); if (!s) return;
+        if (f.kind === "d") {
+          s.forEach((v, i) => { if (v === 1 || v === 2) over[i]++; });
+          if (s[w - 1] === 1) al++;
+          if (s[w - 1] === 2) ep++;
+          if (crossedWeeks(s)) nOver++;
+          if (s.includes(2)) nEpi++;
+        } else {
+          s[0].forEach((v, i) => { over[i] += v || 0; });
+          const a = s[0][w - 1] || 0, e = s[1][w - 1] || 0;
+          ep += e; al += Math.max(0, a - e);
+          if (chadProvAtDistrict(f)) { const [cn, ce] = chadYear(f, y); nOver += cn; nEpi += ce; } else { nOver += sum(s[0]); nEpi += sum(s[1]); }
+        }
+      });
+      if (wk) h += "<dt>Week " + w + "</dt><dd>" + pl(al + ep, "district", "districts") + " over the threshold: " + al + " in alert, " + ep + " in epidemic</dd>";
+      h += "<dt>Year " + y + "</dt><dd>" + (isReg() ? pl(nOver, "district-week", "district-weeks") + " over the threshold, " + nEpi + " in epidemic"
+        : pl(nOver, "district", "districts") + " over the threshold at least once" + (nEpi ? ", " + nEpi + " reached epidemic" : "")) + "</dd>";
+      if (over.some((v) => v)) chart = spark(over, n, wk ? w : 0, "var(--r4)", "districts over the threshold");
+    } else if (seasonView()) {
+      const s = seasonAdd(list.map(seasonOf)), m = seasonMeasures(s);
+      h += "<dt>Cases</dt><dd>" + fmt(s.total) + " in 2021\u201325</dd>";
+      if (m.tot) {
+        h += "<dt>January\u2013June</dt><dd>" + pctTxt(m.jan) + " of them</dd><dt>Over the threshold</dt><dd>" + pctTxt(m.out) + " of cases came in those weeks</dd>" +
+          "<dt>Strength</dt><dd>" + m.R.toFixed(2) + " for the selection as a whole</dd>";
+        chart = seasonChart(s, false);
+      }
+    }
+    h += "</dl>" + chart + '<div class="names">' + list.slice().sort((a, b) => a.properties.n.localeCompare(b.properties.n))
+      .map((f) => esc(f.properties.n) + ' <span class="sm">' + esc(countryName(f.properties.c)) + "</span>").join("; ") + "</div>" +
+      '<button type="button" class="textbtn" id="selclear">Clear selection</button>';
+    D.innerHTML = h;
+    $("selclear").onclick = () => { state.sel.clear(); render(); };
+  }
+
+  function f0IsChad() { const f = state.hover || state.pinned; return !!f && chadProvAtDistrict(f); }
+  function renderDetail() {
+    if (state.sel.size > 1) { renderSelection(); return; }
+    const f = state.hover || state.pinned, D = $("detail");
+    const title = isReg() ? "Region" : f0IsChad() ? "Province (Chad)" : "District";
+    if (!f) { D.innerHTML = "<h2>" + title + '</h2><p class="hint">Hover over the map for details. Click to keep one here, or Cmd-click (Ctrl-click) to add several and see their totals.</p>'; return; }
+    const p = f.properties, y = state.year, w = state.week;
+    const where = f.kind === "r" ? esc(countryName(p.c)) : esc(p.r) + " \u00b7 " + esc(countryName(p.c));
+    let h = "<h2>" + (f === state.pinned && !state.hover ? "Pinned " + title.toLowerCase() : title) + "</h2>" +
+      '<div class="nm">' + esc(p.n) + '</div><div class="where">' + where + "</div>" +
+      '<dl class="kv"><dt>Outline</dt><dd>' + fmtDate(p.s) + " \u2192 " + fmtDate(p.e) + "</dd>";
+    if (state.view === "cases") {
+      const st = statOf(f, y);
+      if (st) {
+        const a = weekly(f, y);
+        if (weekMode()) {
+          const v = a[w - 1];
+          h += "<dt>Week " + w + "</dt><dd>" + (v == null ? "no report" : fmt(v) + " cases \u00b7 " + fmt(deathsIn(st[4], w)) + " deaths") + "</dd>";
+        }
+        h += "<dt>Year " + y + "</dt><dd>" + fmt(st[0]) + " cases \u00b7 " + fmt(st[1]) + " deaths</dd>";
+        h += f.kind === "r" ? "<dt>Districts</dt><dd>" + st[2] + " in the dashboard</dd>" : "<dt>Weeks reported</dt><dd>" + st[2] + " of " + nweeksOf(y) + "</dd>";
+        const dn = f.kind === "r" ? [] : ((stats.dashNames[f.id] || {})[y] || []);
+        if (dn.length) h += "<dt>Dashboard name</dt><dd>" + dn.map(esc).join(", ") + "</dd>";
+        h += "</dl>";
+        if (isChadProv(f)) h += chadNamesHtml(f, y, 40); else if (f.kind === "r") h += extrasHtml(f, y);
+        h += a.some((v) => v) ? spark(a, nweeksOf(y), weekMode() ? w : 0) : '<p class="hint">No cases reported in ' + y + ".</p>";
+      } else {
+        h += '</dl><p class="hint">No dashboard data is linked to this outline in ' + y + ".</p>";
+      }
+    } else if (state.view === "thr") {
+      const s = status(f, y);
+      if (!s) h += '</dl><p class="hint">No dashboard data is linked to this outline in ' + y + ".</p>";
+      else if (f.kind === "d") {
+        if (weekMode()) h += "<dt>Week " + w + "</dt><dd>" + (s[w - 1] == null ? "no report" : STATUS_TXT[s[w - 1]]) + "</dd>";
+        h += "<dt>Year " + y + "</dt><dd>" + pl(s.filter((v) => v === 1).length, "week", "weeks") + " in alert \u00b7 " + s.filter((v) => v === 2).length + " in epidemic</dd></dl>" + strip(s, nweeksOf(y), weekMode() ? w : 0) + unitsHtml(f, y);
+      } else {
+        if (weekMode()) h += "<dt>Week " + w + "</dt><dd>" + pl(s[0][w - 1] || 0, "district", "districts") + " over the threshold, " + (s[1][w - 1] || 0) + " in epidemic</dd>";
+        if (weekMode()) h = h.replace("over the threshold, " + (s[1][w - 1] || 0) + " in epidemic", "over the threshold: " + Math.max(0, (s[0][w - 1] || 0) - (s[1][w - 1] || 0)) + " in alert, " + (s[1][w - 1] || 0) + " in epidemic");
+        h += "<dt>Year " + y + "</dt><dd>" + (chadProvAtDistrict(f) ? (([n, e]) => pl(n, "district", "districts") + " over the threshold at least once" + (e ? ", " + e + " reached epidemic" : ""))(chadYear(f, y)) : pl(sum(s[0]), "district-week", "district-weeks") + " over the threshold") + "</dd></dl>" + (sum(s[0]) ? spark(s[0], nweeksOf(y), weekMode() ? w : 0, "var(--r4)", "districts over the threshold") : "");
+        h += isChadProv(f) ? chadNamesHtml(f, y, 40) : extrasHtml(f, y);
+      }
+    } else if (seasonView()) {
+      const s = seasonOf(f);
+      if (!s) h += '</dl><p class="hint">No dashboard data is linked to this outline in 2021\u201325.</p>';
+      else if (!s.total) h += '</dl><p class="hint">No cases reported in ' + yearsTxt(s.years) + ".</p>";
+      else {
+        const m = seasonMeasures(s), k = seasonClass(s);
+        h += "<dt>Season</dt><dd>" + (k === "few" ? "none given (fewer than 20 cases)" : SEASON_TXT[k] + " \u00b7 strength " + m.R.toFixed(2)) + "</dd>" +
+          "<dt>Cases</dt><dd>" + fmt(s.total) + " in " + yearsTxt(s.years) + "</dd>" +
+          "<dt>January\u2013June</dt><dd>" + pctTxt(m.jan) + " of them</dd>" +
+          "<dt>Over the threshold</dt><dd>" + pctTxt(m.out) + " of cases came in those weeks</dd></dl>" + seasonChart(s, false);
+      }
+    } else {
+      const others = F().filter((o) => o !== f && o.properties.c === p.c && o.properties.n === p.n);
+      h += "</dl>";
+      if (p.k) h += '<p class="hint">Same outline as the version before it. WHO re-dated it without changing the boundary, for example when a district moved to another province.</p>';
+      if (others.length) h += '<p class="hint">Other versions of this name: ' + others.map((o) => fmtDate(o.properties.s) + " \u2192 " + fmtDate(o.properties.e)).join("; ") + "</p>";
+    }
+    D.innerHTML = h;
+  }
+
+  function renderUnmatched(y) {
+    const L2 = $("list2");
+    if (y < 2021 || seasonView() || state.country >= NSTUDY) { L2.parentElement.hidden = true; return; }
+    const wk = weekMode(), w = state.week;
+    const thr = state.view === "thr";
+    let um = unmatchedFor(y).map((u) => {
+      if (!thr) return [u, wk ? parseW(u[5])[w - 1] : u[3]];
+      const s = (u[7] || "").split("").map((c) => (c === "." ? null : +c));
+      return [u, wk ? s[w - 1] : crossedWeeks(s)];
+    });
+    if (thr) um = um.filter(([, v]) => v > 0);
+    um.sort((a, b) => (b[1] || 0) - (a[1] || 0));
+    $("list2title").textContent = thr ? (isReg() ? "Over the threshold, not placed in a region, " : "Over the threshold with no outline, ") + (wk ? "week " + w + " " : "") + y
+      : (isReg() ? "Dashboard districts not placed in a region, " : "Dashboard districts with no outline, ") + (wk ? "week " + w + " " : "") + y;
+    const col = thr ? (wk ? "Status" : "Weeks") : "Cases";
+    L2.innerHTML = um.length ? "<table><thead><tr><th>Dashboard name</th><th>Country</th><th class=\"r\">" + col + "</th></tr></thead><tbody>" +
+      um.slice(0, 80).map(([u, v]) => "<tr><td>" + esc(u[1]) + '<span class="sm">' + esc(u[2]) + "</span></td><td>" + esc(u[0]) + '</td><td class="r">' + (v == null ? "\u2014" : thr && wk ? STATUS_TXT[v].replace("in ", "") : fmt(v)) + "</td></tr>").join("") + "</tbody></table>" +
+      (um.length > 80 ? '<p class="hint">' + (um.length - 80) + " more not shown.</p>" : "")
+      : '<p class="hint">' + (thr ? (isReg() ? "Every dashboard district is counted in a region, so none is left out here." : "No district without an outline crossed the threshold in this period.") : isReg() ? "Every dashboard district is counted in a region." : "Every dashboard district is linked to an outline.") + "</p>";
+    if (!isReg() && inSel(CHAD)) L2.innerHTML += '<p class="hint">Chad is drawn by province, so all its districts are counted there and none is listed here.</p>';
+    L2.parentElement.hidden = false;
+  }
+
+  function renderLists() {
+    const y = state.year, L1 = $("list1"), w = state.week;
+    const Word = isReg() ? "Region" : "District";
+    if (state.view === "cases") {
+      const wk = weekMode();
+      $("list1title").textContent = "Most cases, " + (wk ? "week " + w + " " : "") + y;
+      const rows = F().filter((f) => valid(f, y) && inSel(f.properties.c)).map((f) => {
+        const st = statOf(f, y); if (!st) return null;
+        return wk ? [f, weekly(f, y)[w - 1], deathsIn(st[4], w)] : [f, st[0], st[1]];
+      }).filter((r) => r && r[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 15);
+      L1.innerHTML = rows.length ? "<table><thead><tr><th>" + Word + "</th><th>Country</th><th class=\"r\">Cases</th><th class=\"r\">Deaths</th></tr></thead><tbody>" +
+        rows.map(([f, c, d]) => '<tr class="click" data-k="' + f.kind + '" data-id="' + f.id + '"><td>' + esc(f.properties.n) + '</td><td>' + esc(countryName(f.properties.c)) + '</td><td class="r">' + fmt(c) + '</td><td class="r">' + fmt(d) + "</td></tr>").join("") + "</tbody></table>"
+        : '<p class="hint">No cases in this period.</p>';
+    } else if (state.view === "thr") {
+      const wk = weekMode();
+      if (!isReg()) {
+        $("list1title").textContent = (wk ? "Over the threshold, week " + w + " " : "Most weeks over the threshold, ") + y;
+        let rows = distFeats.filter((f) => f.kind === "d" && valid(f, y) && inSel(f.properties.c)).map((f) => {
+          const s = status(f, y); if (!s) return null;
+          return wk ? [f, s[w - 1], (weekly(f, y) || [])[w - 1]] : [f, crossedWeeks(s), s.filter((v) => v === 2).length];
+        }).filter((r) => r && r[1] > 0);
+        distFeats.filter((f) => isChadProv(f) && valid(f, y) && inSel(CHAD)).forEach((f) => chadDistricts(f, y).forEach((r) => rows.push([f, r[1], r[2], r[0]])));
+        rows = rows.sort((a, b) => b[1] - a[1] || (b[2] || 0) - (a[2] || 0)).slice(0, 40);
+        L1.innerHTML = rows.length ? "<table><thead><tr><th>District</th><th>Country</th>" + (wk ? "<th>Status</th><th class=\"r\">Cases</th>" : "<th class=\"r\">Weeks</th><th class=\"r\">Epidemic</th>") + "</tr></thead><tbody>" +
+          rows.map(([f, a, b, nm]) => '<tr class="click" data-k="' + f.kind + '" data-id="' + f.id + '"><td>' + (nm ? esc(nm) + '<span class="sm">' + esc(f.properties.n) + " province</span>" : esc(f.properties.n)) + "</td><td>" + esc(countryName(f.properties.c)) + "</td>" +
+            (wk ? "<td>" + STATUS_TXT[a].replace("in ", "") + '</td><td class="r">' + fmt(b) + "</td>" : '<td class="r">' + a + '</td><td class="r">' + b + "</td>") + "</tr>").join("") + "</tbody></table>"
+          : '<p class="hint">No district crossed the threshold in this period.</p>';
+      } else {
+        $("list1title").textContent = "Regions with districts over the threshold, " + (wk ? "week " + w + " " : "") + y;
+        const rows = rfeats.filter((f) => valid(f, y) && inSel(f.properties.c)).map((f) => {
+          const s = status(f, y); if (!s) return null;
+          return wk ? [f, s[0][w - 1] || 0, s[1][w - 1] || 0] : [f, sum(s[0]), sum(s[1])];
+        }).filter((r) => r && r[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 25);
+        L1.innerHTML = rows.length ? "<table><thead><tr><th>Region</th><th class=\"r\">" + (wk ? "Districts over" : "District-weeks over") + "</th><th class=\"r\">Epidemic</th></tr></thead><tbody>" +
+          rows.map(([f, a, b]) => '<tr class="click" data-k="r" data-id="' + f.id + '"><td>' + esc(f.properties.n) + '<span class="sm">' + esc(countryName(f.properties.c)) + '</span></td><td class="r">' + a + '</td><td class="r">' + b + "</td></tr>").join("") + "</tbody></table>"
+          : '<p class="hint">No region had a district over the threshold in this period.</p>';
+      }
+    } else if (seasonView()) {
+      $("list1title").textContent = (isReg() ? "Regions" : "Districts") + " by season, most cases first";
+      const rows = F().filter((f) => valid(f, y) && inSel(f.properties.c)).map((f) => {
+        const s = seasonOf(f); return s && s.total >= SEASON_MIN ? [f, s.total, seasonClass(s)] : null;
+      }).filter(Boolean).sort((a, b) => b[1] - a[1]).slice(0, 40);
+      L1.innerHTML = rows.length ? "<table><thead><tr><th>" + Word + '</th><th>Country</th><th class="r">Cases 2021\u201325</th><th>Season</th></tr></thead><tbody>' +
+        rows.map(([f, c, k]) => '<tr class="click" data-k="' + f.kind + '" data-id="' + f.id + '"><td>' + esc(f.properties.n) + (chadProvAtDistrict(f) ? '<span class="sm">province</span>' : "") + "</td><td>" + esc(countryName(f.properties.c)) + '</td><td class="r">' + fmt(c) + "</td><td>" + SEASON_SHORT[k] + "</td></tr>").join("") + "</tbody></table>"
+        : '<p class="hint">No ' + Word.toLowerCase() + " here had 20 or more cases in 2021\u201325.</p>";
+    } else {
+      const word = Word.toLowerCase();
+      $("list1title").textContent = "New " + word + " outlines in " + y;
+      const rows = F().filter((f) => inSel(f.properties.c) && Math.floor(f.properties.s / 10000) === y).sort((a, b) => a.properties.c - b.properties.c || a.properties.n.localeCompare(b.properties.n));
+      // WHO's records start in 2000, so only a later start year is a change WHO recorded
+      const years = F().filter((f) => inSel(f.properties.c)).map((f) => Math.floor(f.properties.s / 10000)).filter((v) => v > 2000);
+      const last = Math.max(...years.filter((v) => v <= y)), first = Math.min(...years);
+      const where = state.country < 0 ? "these countries" : countryName(state.country);
+      const why = isFinite(last) ? " Its most recent change for " + where + " is from " + last + "."
+        : isFinite(first) ? " Its records start in 2000, and its first change for " + where + " is dated " + first + "."
+        : " It records no change for " + where + " at all.";
+      L1.innerHTML = rows.length ? "<table><thead><tr><th>" + Word + "</th><th>Country</th></tr></thead><tbody>" +
+        rows.slice(0, 150).map((f) => '<tr class="click" data-k="' + f.kind + '" data-id="' + f.id + '"><td>' + esc(f.properties.n) + (f.kind === "d" ? '<span class="sm">' + esc(f.properties.r) + "</span>" : "") + "</td><td>" + esc(countryName(f.properties.c)) + "</td></tr>").join("") + "</tbody></table>"
+        : '<p class="hint">WHO\'s map has no new ' + word + " outline in " + y + "." + why + "</p>";
+    }
+    renderUnmatched(y);
+    renderChadPanel(y);
+    L1.querySelectorAll("tr.click").forEach((tr) => tr.addEventListener("click", (e) => {
+      const f = byKey.get(tr.dataset.k + tr.dataset.id), add = e.metaKey || e.ctrlKey;
+      if (add) pick(f, true); else { state.sel.clear(); state.pinned = f; }
+      state.hover = null; render();
+      if (!add) zoomTo([f]);
+    }));
+  }
+
+  function renderChadPanel(y) {
+    const P2 = $("chadpanel");
+    if (state.view !== "bounds" || !inSel(CHAD)) { P2.hidden = true; return; }
+    const L = $("chadlist"), ch = (stats.chadChanges || {})[y];
+    const cap = (a) => a.slice(0, 60).map(esc).join(", ") + (a.length > 60 ? ", +" + (a.length - 60) + " more" : "");
+    let h;
+    if (ch) {
+      $("chadtitle").textContent = "Chad's district list in the dashboard, " + y;
+      h = "<p>" + ch.n + " districts, drawn here as the 23 provinces they belong to.</p>";
+      if (y > 2021) h += "<p><b>New since " + (y - 1) + " (" + ch.added.length + "):</b> " + (ch.added.length ? cap(ch.added) : "none") + "</p><p><b>No longer listed (" + ch.dropped.length + "):</b> " + (ch.dropped.length ? cap(ch.dropped) : "none") + "</p>";
+      else h += '<p class="hint">The dashboard starts in 2021, so there is no earlier list to compare with.</p>';
+    } else {
+      $("chadtitle").textContent = "Chad's district outlines on WHO's map, " + y;
+      const now = feats.filter((f) => f.properties.c === CHAD && valid(f, y)), born = now.filter((f) => Math.floor(f.properties.s / 10000) === y && !f.properties.k);
+      h = "<p>" + now.length + " district outlines on WHO's map, drawn here as provinces. " + (born.length ? born.length + " outlines new in " + y + ": " + cap(born.map((f) => f.properties.n)) + "." : "No district outline changed in " + y + ".") + "</p>";
+    }
+    L.innerHTML = '<div class="names">' + h + "</div>"; P2.hidden = false;
+  }
+
+  function showTip(e, f) {
+    const p = f.properties, T = $("tip"), y = state.year, w = state.week;
+    let h = "<b>" + esc(p.n) + '</b><span class="m">' + (f.kind === "r" ? (isChadProv(f) ? "Province \u00b7 " : "") : esc(p.r) + " \u00b7 ") + esc(countryName(p.c)) + "</span>";
+    if (state.view === "cases") {
+      const st = statOf(f, y);
+      if (!st) h += '<div class="m">No dashboard data in ' + y + "</div>";
+      else if (weekMode()) { const v = weekly(f, y)[w - 1]; h += "<div>Week " + w + ": " + (v == null ? "no report" : fmt(v) + " cases \u00b7 " + fmt(deathsIn(st[4], w)) + " deaths") + "</div>"; }
+      else h += "<div>" + fmt(st[0]) + " cases \u00b7 " + fmt(st[1]) + " deaths in " + y + "</div>";
+      if (st) h += f.kind === "d" ? unitsHtml(f, y) : isChadProv(f) ? '<div class="m">' + st[2] + " dashboard districts in this province</div>" : extrasHtml(f, y);
+    } else if (state.view === "thr") {
+      const s = status(f, y);
+      if (!s) h += '<div class="m">No dashboard data in ' + y + "</div>";
+      else if (f.kind === "d") h += weekMode() ? "<div>Week " + w + ": " + (s[w - 1] == null ? "no report" : STATUS_TXT[s[w - 1]]) + "</div>" : "<div>" + pl(crossedWeeks(s), "week", "weeks") + " over the threshold in " + y + " (" + s.filter((v) => v === 2).length + " in epidemic)</div>";
+      else h += weekMode() ? "<div>Week " + w + ": " + pl(s[0][w - 1] || 0, "district", "districts") + " over the threshold" + ((s[0][w - 1] || 0) ? " (" + Math.max(0, (s[0][w - 1] || 0) - (s[1][w - 1] || 0)) + " in alert, " + (s[1][w - 1] || 0) + " in epidemic)" : "") + "</div>" : "<div>" + (chadProvAtDistrict(f) ? (([n, e]) => pl(n, "district", "districts") + " over the threshold at least once in " + y + (e ? " (" + e + " reached epidemic)" : ""))(chadYear(f, y)) : pl(sum(s[0]), "district-week", "district-weeks") + " over the threshold in " + y) + "</div>";
+      if (s) h += isChadProv(f) ? chadNamesHtml(f, y, 12) : f.kind === "r" ? extrasHtml(f, y) : unitsHtml(f, y);
+    } else if (seasonView()) {
+      const s = seasonOf(f);
+      if (!s) h += '<div class="m">No dashboard data in 2021\u201325</div>';
+      else {
+        const m = seasonMeasures(s), k = seasonClass(s);
+        h += "<div>" + (k === "few" ? "Fewer than 20 cases" : SEASON_TXT[k].charAt(0).toUpperCase() + SEASON_TXT[k].slice(1) + ", strength " + m.R.toFixed(2)) + "</div>" +
+          '<div class="m">' + fmt(s.total) + " cases in " + yearsTxt(s.years) + (m.tot ? " \u00b7 " + pctTxt(m.jan) + " in January\u2013June" : "") + "</div>";
+      }
+    } else {
+      h += "<div>Outline " + fmtDate(p.s) + " \u2192 " + fmtDate(p.e) + "</div>";
+    }
+    T.innerHTML = h; T.hidden = false; moveTip(e);
+  }
+  function moveTip(e) {
+    const T = $("tip"), pad = 14, w = T.offsetWidth, hh = T.offsetHeight;
+    let x = e.clientX + pad, y = e.clientY + pad;
+    if (x + w > window.innerWidth - 8) x = e.clientX - w - pad;
+    if (y + hh > window.innerHeight - 8) y = e.clientY - hh - pad;
+    T.style.left = Math.max(8, x) + "px"; T.style.top = Math.max(8, y) + "px";
+  }
+
+  function zoomTo(list) {
+    if (!list.length) return;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    list.forEach((f) => { const b = f.b; x0 = Math.min(x0, b[0][0]); y0 = Math.min(y0, b[0][1]); x1 = Math.max(x1, b[1][0]); y1 = Math.max(y1, b[1][1]); });
+    const k = Math.min(40, 0.9 / Math.max((x1 - x0) / width, (y1 - y0) / height));
+    const t = d3.zoomIdentity.translate(width / 2, height / 2).scale(Math.max(1, list.length === 1 ? Math.min(k, 12) : k)).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
+    svg.transition().duration(matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 600).call(zoom.transform, t);
+  }
+  function fitSelection() {
+    if (state.country < 0) { svg.transition().duration(500).call(zoom.transform, state.view === "bounds" ? d3.zoomIdentity : studyT); return; }
+    zoomTo(F().filter((f) => f.properties.c === state.country && valid(f, state.year)));
+  }
+
+  function peakWeek(y) {
+    const t = new Array(nweeksOf(y)).fill(0);
+    feats.forEach((f) => { const a = weekly(f, y); if (a) a.forEach((v, i) => { if (v) t[i] += v; }); });
+    return t.indexOf(Math.max(...t)) + 1;
+  }
+
+  function hoverable(sel) {
+    return sel
+      .on("pointerenter", function (e, f) { state.hover = f; d3.select(this).classed("hot", true).raise(); showTip(e, f); renderDetail(); })
+      .on("pointermove", (e) => moveTip(e))
+      .on("pointerleave", function () { state.hover = null; d3.select(this).classed("hot", false); $("tip").hidden = true; renderDetail(); })
+      .on("click", (e, f) => { pick(f, e.metaKey || e.ctrlKey); state.hover = null; $("tip").hidden = true; render(); });
+  }
+
+  function init() {
+    feats = geo.features; rfeats = rgeo.features;
+    feats.forEach((f) => { f.kind = "d"; });
+    rfeats.forEach((f) => { f.kind = "r"; });
+    feats.forEach((f) => byKey.set("d" + f.id, f)); rfeats.forEach((f) => byKey.set("r" + f.id, f));
+    NSTUDY = stats.countries.length; ALLC = stats.countries.concat(belt.countries);
+    CHAD = stats.chad != null ? stats.chad : stats.countries.indexOf("Chad");
+    distFeats = feats.filter((f) => f.properties.c !== CHAD).concat(rfeats.filter((f) => f.properties.c === CHAD));
+    // the frame holds the whole belt; the study area is a zoom inside it
+    const area = { type: "FeatureCollection", features: borders.features.concat(belt.borders.features) };
+    projection = d3.geoMercator().fitWidth(width - 60, area);
+    pathGen = d3.geoPath(projection);
+    const b = pathGen.bounds(area), t0 = projection.translate();
+    projection.translate([t0[0] + 30, t0[1] - b[0][1] + 40]);
+    height = Math.ceil(b[1][1] - b[0][1] + 80);
+    svg = d3.select("#map").attr("viewBox", "0 0 " + width + " " + height);
+    const defs = svg.append("defs");
+    const pat = defs.append("pattern").attr("id", "hatch").attr("width", 5).attr("height", 5).attr("patternUnits", "userSpaceOnUse").attr("patternTransform", "rotate(45)");
+    pat.append("rect").attr("width", 5).attr("height", 5).style("fill", "var(--nodata-bg)");
+    pat.append("line").attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 5).style("stroke", "var(--nodata-line)").attr("stroke-width", 1.4);
+    svg.append("rect").attr("width", width).attr("height", height).style("fill", "var(--surface)");
+    g = svg.append("g");
+    const osm = g.append("g").attr("class", "osm");
+    // OpenStreetMap background, z6 for the whole belt; the sharper z7 images load the first time you zoom in
+    const OSM = { z6: {"west": -22.5, "north": 31.952162238024968, "east": 50.625, "south": -16.636191878397653, "w": 3328, "h": 2304},
+      z7: [[{"west": -22.5, "north": 29.535229562948455, "east": 30.9375, "south": -5.615985819155334, "w": 4864, "h": 3328}, "data/osm_z7.jpg"], [{"west": 30.9375, "north": 29.535229562948455, "east": 50.625, "south": -16.636191878397653, "w": 1792, "h": 4352}, "data/osm_z7_east.jpg"], [{"west": -22.5, "north": -5.615985819155334, "east": 30.9375, "south": -16.636191878397653, "w": 4864, "h": 1024}, "data/osm_z7_south.jpg"]] };
+    const placeImg = (m, href) => {
+      const p0 = projection([m.west, m.north]), p1 = projection([m.east, m.south]);
+      return osm.append("image").attr("href", href).attr("x", p0[0]).attr("y", p0[1]).attr("width", p1[0] - p0[0]).attr("height", p1[1] - p0[1]).attr("preserveAspectRatio", "none");
+    };
+    placeImg(OSM.z6, "data/osm_z6.jpg");
+    let sharp = null;  // the sharper background loads the first time you zoom in
+    feats.forEach((f) => { f.b = pathGen.bounds(f); });
+    rfeats.forEach((f) => { f.b = pathGen.bounds(f); });
+    const order = (arr) => arr.slice().sort((a, b2) => a.properties.s - b2.properties.s);
+    paths = hoverable(g.append("g").selectAll("path").data(order(feats)).join("path").attr("class", "d").attr("d", pathGen));
+    rpaths = hoverable(g.append("g").selectAll("path").data(order(rfeats)).join("path").attr("class", "d reg").attr("d", pathGen));
+    beltLayers = [g.append("g"), g.append("g")];  // filled once the rest of the belt has loaded
+    g.append("g").selectAll("path").data(borders.features).join("path").attr("class", "cborder").attr("d", pathGen);
+    g.append("g").selectAll("path").data(belt.borders.features).join("path").attr("class", "cborder belt").attr("d", pathGen);
+    clabels = g.append("g").selectAll("text").data(rfeats.filter((f) => f.properties.c === CHAD)).join("text").attr("class", "clab")
+      .attr("x", (f) => pathGen.centroid(f)[0]).attr("y", (f) => pathGen.centroid(f)[1]).style("font-size", "11px").attr("display", "none");
+    zoom = d3.zoom().scaleExtent([1, 40]).translateExtent([[-width * 0.2, -height * 0.2], [width * 1.2, height * 1.2]])
+      .on("zoom", (e) => { g.attr("transform", e.transform); if (clabels) clabels.style("font-size", (11 / e.transform.k) + "px").style("stroke-width", (3 / e.transform.k) + "px"); if (e.transform.k >= 1.8 * K0 && !sharp) sharp = OSM.z7.map(([b, href]) => placeImg(b, href)); });
+    svg.call(zoom).on("dblclick.zoom", null);
+    const sb = pathGen.bounds(geo);
+    K0 = Math.min(40, 0.92 / Math.max((sb[1][0] - sb[0][0]) / width, (sb[1][1] - sb[0][1]) / height));
+    studyT = d3.zoomIdentity.translate(width / 2, height / 2).scale(K0).translate(-(sb[0][0] + sb[1][0]) / 2, -(sb[0][1] + sb[1][1]) / 2);
+    zoom.scaleExtent([K0 * 0.85, 40]); svg.call(zoom.transform, studyT);
+    $("zin").onclick = () => svg.transition().call(zoom.scaleBy, 1.6);
+    $("zout").onclick = () => svg.transition().call(zoom.scaleBy, 1 / 1.6);
+    $("zreset").onclick = () => fitSelection();
+    const sel = $("country");
+    sel.onchange = () => { state.country = +sel.value; state.pinned = null; state.sel.clear(); render(); fitSelection(); };
+    $("l-dist").onclick = () => setLevel("district");
+    $("l-reg").onclick = () => setLevel("region");
+    $("v-cases").onclick = () => setView("cases");
+    $("v-thr").onclick = () => setView("thr");
+    $("v-bounds").onclick = () => setView("bounds");
+    $("v-season").onclick = () => setView("season");
+    $("p-week").onclick = () => setPeriod("week");
+    $("p-year").onclick = () => setPeriod("year");
+    $("year").oninput = (e) => { stopPlay(); state.year = +e.target.value; render(); };
+    $("week").oninput = (e) => { stopPlay(); state.week = +e.target.value; render(); };
+    $("play").onclick = () => (playTimer ? stopPlay() : startPlay());
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && (state.sel.size || state.pinned)) { state.sel.clear(); state.pinned = null; render(); } });
+    state.week = peakWeek(state.year);
+    $("loading").hidden = true;
+    const VIEWS = { cases: "cases", thresholds: "thr", season: "season", boundaries: "bounds" }, v0 = VIEWS[location.hash.slice(1)];
+    if (v0 && v0 !== "cases") setView(v0); else render();
+    setTimeout(loadBelt, 1500);  // the rest of the belt loads in the background
+  }
+
+  // the 17 belt countries with no case data: outlines only, loaded after the page is up
+  function loadBelt() {
+    if (beltLoad) return beltLoad;
+    beltLoad = Promise.all(["data/belt_outlines.json", "data/belt_regions.json"].map((u) => fetch(u).then((r) => r.json()))).then(([o, r]) => {
+      bfeats = o.features; brfeats = r.features;
+      bfeats.forEach((f) => { f.kind = "d"; f.b = pathGen.bounds(f); byKey.set("d" + f.id, f); });
+      brfeats.forEach((f) => { f.kind = "r"; f.b = pathGen.bounds(f); byKey.set("r" + f.id, f); });
+      const order = (arr) => arr.slice().sort((a, b2) => a.properties.s - b2.properties.s);
+      bpaths = hoverable(beltLayers[0].selectAll("path").data(order(bfeats)).join("path").attr("class", "d").attr("d", pathGen));
+      brpaths = hoverable(beltLayers[1].selectAll("path").data(order(brfeats)).join("path").attr("class", "d reg").attr("d", pathGen));
+      beltReady = true; prevYear = null; render();
+      if (state.view === "bounds" && state.country < 0) fitSelection();
+    }).catch(() => { beltLoad = null; });
+    return beltLoad;
+  }
+
+  Promise.all(["data/outlines.json", "data/regions.json", "data/stats.json", "data/countries.json", "data/belt_countries.json"].map((u) => fetch(u).then((r) => r.json())))
+    .then(([o, r, s, c, bc]) => { geo = o; rgeo = r; stats = s; borders = c; belt = bc; init(); })
+    .catch((err) => { $("loading").innerHTML = '<div class="err">The map data did not load (' + esc(err.message) + "). Reload the page to try again.</div>"; });
+})();
+</script>
+</body>
+</html>
