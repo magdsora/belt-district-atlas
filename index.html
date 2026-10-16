@@ -202,7 +202,6 @@
       <div class="panel detail" id="detail"><h2>District</h2><p class="hint">Hover over the map for details. Click to keep one here, or Cmd-click (Ctrl-click) to add several and see their totals.</p></div>
       <div class="panel"><h2 id="list1title">Most cases</h2><div class="list" id="list1"></div></div>
       <div class="panel"><h2 id="list2title">Dashboard districts with no outline</h2><div class="list" id="list2"></div></div>
-      <div class="panel" id="chadpanel" hidden><h2 id="chadtitle">Chad's district list</h2><div class="list" id="chadlist"></div></div>
     </aside>
   </div>
 
@@ -927,32 +926,12 @@
         : '<p class="hint">WHO\'s map has no new ' + word + " outline in " + y + "." + why + "</p>";
     }
     renderUnmatched(y);
-    renderChadPanel(y);
     L1.querySelectorAll("tr.click").forEach((tr) => tr.addEventListener("click", (e) => {
       const f = byKey.get(tr.dataset.k + tr.dataset.id), add = e.metaKey || e.ctrlKey;
       if (add) pick(f, true); else { state.sel.clear(); state.pinned = f; }
       state.hover = null; render();
       if (!add) zoomTo([f]);
     }));
-  }
-
-  function renderChadPanel(y) {
-    const P2 = $("chadpanel");
-    if (state.view !== "bounds" || !inSel(CHAD)) { P2.hidden = true; return; }
-    const L = $("chadlist"), ch = (stats.chadChanges || {})[y];
-    const cap = (a) => a.slice(0, 60).map(esc).join(", ") + (a.length > 60 ? ", +" + (a.length - 60) + " more" : "");
-    let h;
-    if (ch) {
-      $("chadtitle").textContent = "Chad's district list in the dashboard, " + y;
-      h = "<p>" + ch.n + " districts in the dashboard, against " + feats.filter((f) => f.properties.c === CHAD && valid(f, y)).length + " district outlines on WHO's map.</p>";
-      if (y > 2021) h += "<p><b>New since " + (y - 1) + " (" + ch.added.length + "):</b> " + (ch.added.length ? cap(ch.added) : "none") + "</p><p><b>No longer listed (" + ch.dropped.length + "):</b> " + (ch.dropped.length ? cap(ch.dropped) : "none") + "</p>";
-      else h += '<p class="hint">The dashboard starts in 2021, so there is no earlier list to compare with.</p>';
-    } else {
-      $("chadtitle").textContent = "Chad's district outlines on WHO's map, " + y;
-      const now = feats.filter((f) => f.properties.c === CHAD && valid(f, y)), born = now.filter((f) => Math.floor(f.properties.s / 10000) === y && !f.properties.k);
-      h = "<p>" + now.length + " district outlines on WHO's map. " + (born.length ? born.length + " outlines new in " + y + ": " + cap(born.map((f) => f.properties.n)) + "." : "No district outline changed in " + y + ".") + "</p>";
-    }
-    L.innerHTML = '<div class="names">' + h + "</div>"; P2.hidden = false;
   }
 
   function showTip(e, f) {
