@@ -217,7 +217,7 @@
     </section>
     <section>
       <h3>Where the sources disagree</h3>
-      <p><b>Chad</b> lists far more districts in the dashboard (199 in 2026) than WHO's map has outlines (126, from 2017), so it is shown by its 23 provinces, each adding up all its districts.</p>
+      <p><b>Chad</b> lists far more districts in the dashboard (199 in 2026) than WHO's map has outlines (126, from 2017), so the views with cases show it by its 23 provinces, each adding up all its districts. Boundary history draws WHO's district outlines.</p>
       <p><b>Districts with no outline</b> on WHO's map are counted in their region and named when you hover over it. They are never drawn on a guessed shape.</p>
       <p><b>Split districts</b> that WHO's map doesn't draw, such as Bamako's communes, are drawn on the original district's outline, with their cases added up.</p>
       <p><b>Boundary dates:</b> WHO's map dates a change to when the map was updated, often years late. Its records start in 2000. The first change it records is dated 2011 (Sudan and South Sudan), and 2016 in the nine study countries, where Ghana's 2012 districts appear only from 2018. After 2020 it showed no change until its update of 14 October 2026, which adds outlines dated 2025 in Cameroon, Benin, Kenya and Uganda, and 2021 in Ethiopia and Senegal. In Cameroon and Benin the new outlines are drawn from the first year the dashboard reports each new district (2021 to 2023), not from 2025. Benin's Abomey-Calavi and Porto-Novo stay whole: WHO splits each into three, but the dashboard still reports each as one district. Five new Cameroon districts and most of Chad's new ones still have no outline.</p>
@@ -245,7 +245,8 @@
   const state = { level: "district", view: "cases", period: "week", year: 2025, week: 11, country: -1, pinned: null, hover: null, sel: new Set() };
   let geo, rgeo, base, borders, stats, feats, rfeats, paths, rpaths, svg, g, zoom, width = 1000, height = 500, pathGen, projection;
   let prevYear = null, prevLevel = null, flashTimer = null, playTimer = null, lastChanged = 0, zoomK = 1;
-  // v11: Chad is drawn by province at the district level (its district list changes every year and most new districts have no outline)
+  // v11: Chad is drawn by province at the district level (its district list changes every year and most new districts have no outline);
+  // version 28: except in Boundary history, which draws WHO's district outlines
   let CHAD = -1, distFeats = [], clabels = null;
   // the rest of the meningitis belt (17 countries): outlines only, shown in the Boundary history view
   let NSTUDY = 9, ALLC = [], belt = null, bfeats = [], brfeats = [], bpaths = null, brpaths = null, beltReady = false, beltLoad = null, beltLayers = null, K0 = 1, studyT = null;
@@ -274,14 +275,15 @@
   const cls = (c, br) => { let k = 0; for (let i = 0; i < br.length; i++) if (c >= br[i]) k = i; return k; };
   const labelsFor = (br) => br.map((b, i) => (i === br.length - 1 ? b + "+" : (br[i + 1] - 1 === b ? String(b) : b + "\u2013" + (br[i + 1] - 1))));
   const isReg = () => state.level === "region";
+  const chadByProv = () => !isReg() && state.view !== "bounds";   // Chad is drawn by province at district level, except in Boundary history (version 28)
   const F = () => {
-    const base = isReg() ? rfeats : distFeats;
+    const base = isReg() ? rfeats : chadByProv() ? distFeats : feats;
     return state.view === "bounds" && beltReady ? base.concat(isReg() ? brfeats : bfeats) : base;
   };
   const allSels = () => [paths, rpaths].concat(bpaths ? [bpaths, brpaths] : []);
   const isChadProv = (f) => f.kind === "r" && f.properties.c === CHAD;
-  const chadProvAtDistrict = (f) => isChadProv(f) && !isReg();
-  const unitWord = (plural) => (isReg() ? (plural ? "regions" : "region") : state.country === CHAD ? (plural ? "provinces" : "province") : (plural ? "districts" : "district"));
+  const chadProvAtDistrict = (f) => isChadProv(f) && chadByProv();
+  const unitWord = (plural) => (isReg() ? (plural ? "regions" : "region") : state.country === CHAD && chadByProv() ? (plural ? "provinces" : "province") : (plural ? "districts" : "district"));
   const statOf = (f, y) => ((f.kind === "r" ? stats.byRegion : stats.byOutline)[f.id] || {})[y] || null;
   const nweeksOf = (y) => stats.nweeks[y] || 52;
   const parseW = (s) => s.split(",").map((v) => (v === "" ? null : +v));
@@ -480,7 +482,7 @@
     svg.classed("bounds", state.view === "bounds");
     zoom.scaleExtent([state.view === "bounds" ? 1 : K0 * 0.85, 40]);
     const y = state.year;
-    const onLevel = (f) => (isReg() ? f.kind === "r" : f.kind === "d" ? f.properties.c !== CHAD : f.properties.c === CHAD);
+    const onLevel = (f) => (isReg() ? f.kind === "r" : f.properties.c === CHAD ? (chadByProv() ? f.kind === "r" : f.kind === "d") : f.kind === "d");
     const shown = (f) => onLevel(f) && valid(f, y) && (f.properties.c < NSTUDY || state.view === "bounds");
     if (state.pinned && !shown(state.pinned)) state.pinned = null;
     state.sel.forEach((f) => { if (!shown(f)) state.sel.delete(f); });
@@ -615,12 +617,12 @@
     }
     if (state.view === "bounds") L.innerHTML += '<span><span class="sw" style="background:var(--flash);opacity:0.6"></span>changed from the year before (flashes)</span>';
     if (state.view === "bounds" && !beltReady) L.innerHTML += '<span class="lbl">Loading the rest of the belt\u2026</span>';
-    if (!isReg() && inSel(CHAD)) L.innerHTML += '<span class="lbl">Chad is drawn by province: cases are summed over its districts' + (state.view === "thr" ? (weekMode() ? "; red if any of its districts is in epidemic, yellow if any is in alert; the number is how many of its districts were over the threshold that week" : "; red if any of its districts was in epidemic at some point in the year, yellow if any was in alert; the number is how many of its districts were over the threshold at least once") : "") + "</span>";
+    if (chadByProv() && inSel(CHAD)) L.innerHTML += '<span class="lbl">Chad is drawn by province: cases are summed over its districts' + (state.view === "thr" ? (weekMode() ? "; red if any of its districts is in epidemic, yellow if any is in alert; the number is how many of its districts were over the threshold that week" : "; red if any of its districts was in epidemic at some point in the year, yellow if any was in alert; the number is how many of its districts were over the threshold at least once") : "") + "</span>";
   }
 
   function unmatchedFor(y) {
     const um = [], src = isReg() ? stats.unplaced : stats.unmatched;
-    stats.countries.forEach((c, ci) => { if (inSel(ci) && !(ci === CHAD && !isReg())) ((src[ci] || {})[y] || []).forEach((u) => um.push([c, ...u])); });
+    stats.countries.forEach((c, ci) => { if (inSel(ci) && !(ci === CHAD && chadByProv())) ((src[ci] || {})[y] || []).forEach((u) => um.push([c, ...u])); });
     return um;  // [country, name, region, cases, deaths, weeklyString, deathsSparse, statusString]
   }
 
@@ -629,7 +631,7 @@
     const shown = F().filter((f) => valid(f, y) && inSel(f.properties.c));
     const cname = state.country < 0 ? (state.view === "bounds" && beltReady ? "All " + ALLC.length + " belt countries" : "All " + NSTUDY + " countries") : countryName(state.country);
     let nDash = 0, nLinked = 0;
-    stats.countries.forEach((_, ci) => { if (inSel(ci)) { const s = (stats.summary[ci] || {})[y]; if (s) { nDash += s[0]; nLinked += ci === CHAD && !isReg() ? s[0] : s[1]; } } });
+    stats.countries.forEach((_, ci) => { if (inSel(ci)) { const s = (stats.summary[ci] || {})[y]; if (s) { nDash += s[0]; nLinked += ci === CHAD && chadByProv() ? s[0] : s[1]; } } });
     const leftover = unmatchedFor(y);
     const missLabel = isReg() ? "dashboard districts not placed in a region" : "dashboard districts with no outline";
     const missN = isReg() ? leftover.length : nDash - nLinked;
@@ -860,7 +862,7 @@
       um.slice(0, 80).map(([u, v]) => "<tr><td>" + esc(u[1]) + '<span class="sm">' + esc(u[2]) + "</span></td><td>" + esc(u[0]) + '</td><td class="r">' + (v == null ? "\u2014" : thr && wk ? STATUS_TXT[v].replace("in ", "") : fmt(v)) + "</td></tr>").join("") + "</tbody></table>" +
       (um.length > 80 ? '<p class="hint">' + (um.length - 80) + " more not shown.</p>" : "")
       : '<p class="hint">' + (thr ? (isReg() ? "Every dashboard district is counted in a region, so none is left out here." : "No district without an outline crossed the threshold in this period.") : isReg() ? "Every dashboard district is counted in a region." : "Every dashboard district is linked to an outline.") + "</p>";
-    if (!isReg() && inSel(CHAD)) L2.innerHTML += '<p class="hint">Chad is drawn by province, so all its districts are counted there and none is listed here.</p>';
+    if (chadByProv() && inSel(CHAD)) L2.innerHTML += '<p class="hint">Chad is drawn by province, so all its districts are counted there and none is listed here.</p>';
     L2.parentElement.hidden = false;
   }
 
@@ -942,13 +944,13 @@
     let h;
     if (ch) {
       $("chadtitle").textContent = "Chad's district list in the dashboard, " + y;
-      h = "<p>" + ch.n + " districts, drawn here as the 23 provinces they belong to.</p>";
+      h = "<p>" + ch.n + " districts in the dashboard, against " + feats.filter((f) => f.properties.c === CHAD && valid(f, y)).length + " district outlines on WHO's map.</p>";
       if (y > 2021) h += "<p><b>New since " + (y - 1) + " (" + ch.added.length + "):</b> " + (ch.added.length ? cap(ch.added) : "none") + "</p><p><b>No longer listed (" + ch.dropped.length + "):</b> " + (ch.dropped.length ? cap(ch.dropped) : "none") + "</p>";
       else h += '<p class="hint">The dashboard starts in 2021, so there is no earlier list to compare with.</p>';
     } else {
       $("chadtitle").textContent = "Chad's district outlines on WHO's map, " + y;
       const now = feats.filter((f) => f.properties.c === CHAD && valid(f, y)), born = now.filter((f) => Math.floor(f.properties.s / 10000) === y && !f.properties.k);
-      h = "<p>" + now.length + " district outlines on WHO's map, drawn here as provinces. " + (born.length ? born.length + " outlines new in " + y + ": " + cap(born.map((f) => f.properties.n)) + "." : "No district outline changed in " + y + ".") + "</p>";
+      h = "<p>" + now.length + " district outlines on WHO's map. " + (born.length ? born.length + " outlines new in " + y + ": " + cap(born.map((f) => f.properties.n)) + "." : "No district outline changed in " + y + ".") + "</p>";
     }
     L.innerHTML = '<div class="names">' + h + "</div>"; P2.hidden = false;
   }
