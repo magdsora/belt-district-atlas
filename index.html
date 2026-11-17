@@ -178,7 +178,7 @@
         <button id="v-cases" type="button" aria-pressed="true">Cases</button>
         <button id="v-thr" type="button" aria-pressed="false">Thresholds</button>
         <button id="v-season" type="button" aria-pressed="false">Season</button>
-        <button id="v-cliff" type="button" aria-pressed="false">Outbreaks 2003&ndash;22</button>
+        <button id="v-cliff" type="button" aria-pressed="false">Epidemics 2003&ndash;22</button>
         <button id="v-bull" type="button" aria-pressed="false" hidden>Bulletins 2010&ndash;20</button>
         <button id="v-bounds" type="button" aria-pressed="false">Boundary history</button>
       </div>
@@ -221,7 +221,7 @@
       <p><b>Cases</b> are suspected meningitis cases reported to WHO's meningitis dashboard, for one week or the whole year, from 2021. Districts with no cases are left blank; hatching means no report.</p>
       <p><b>Thresholds</b> are the dashboard's alerts and epidemics: epidemic at 10 or more cases per 100,000 people in a week, alert at 3 to 10 per 100,000 with at least 2 cases. Over a whole year, the colour counts the weeks spent over a threshold.</p>
       <p><b>Season</b> shows how bunched each district's cases are in the calendar, in an average year of the years you choose (full years only): each week is averaged over the years that reported it. Strength runs from 0, cases spread evenly through the year, to 1, all of them in the same week. A clear season is 0.5 or more, some season 0.25 to 0.5, and little or no season under 0.25. Districts with fewer than 20 cases in the period get no class. The chart splits each week's cases into those that came in weeks the district was over the threshold and the rest.</p>
-      <p><b>Outbreaks 2003&ndash;22</b> shows Molly Cliff's published list of meningitis outbreaks, year by year, coloured by the number of weeks in outbreak. Her list uses administrative units. Where a unit holds several health districts it is drawn whole, with a dashed outline, because the list does not say which district had the outbreak.</p>
+      <p><b>Epidemics 2003&ndash;22</b> shows Molly Cliff's published list of districts in epidemic, year by year, coloured by the number of weeks in epidemic. Her papers call these outbreaks; they are the same thing as an epidemic week in the other tabs, 10 or more cases per 100,000 people in a week, and alerts are not in her list. Her list uses administrative units. Where a unit holds several health districts it is drawn whole, with a dashed outline, because the list does not say which district had the epidemic.</p>
       <p id="foot-bull"><b>Bulletins 2010&ndash;20</b> shows the districts WHO's weekly bulletins named in alert or in epidemic, for one week or a whole year. The bulletins name only the districts over a threshold. Until 2015 an alert was called at 5 cases per 100,000, and from 2016 at 3, so alerts before 2016 are striped and can't be compared with later years. Epidemics, at 10 per 100,000, compare across all years.</p>
       <p><b>Boundary history</b> shows the district and region outlines for each year from 2015, for all 26 countries of the meningitis belt; the other views cover the nine study countries. Outlines that changed from the year before flash orange.</p>
       <p><b>Selecting:</b> click a district or region to keep its details on the right. Cmd-click (Ctrl-click on Windows) to select several and see their totals. Esc clears the selection.</p>
@@ -237,7 +237,7 @@
     <section>
       <h3>Sources</h3>
       <p>Cases, alerts and epidemics from 2021: WHO meningitis dashboard, downloaded <span id="pulled">10 November 2026</span>.</p>
-      <p>Outbreaks 2003&ndash;2022: Cliff M, Jahn S, Bita Fouda A, Latt A, Lingani C, Trotter C. Re-evaluating environmental associations with meningitis risk across Africa. Wellcome Open Research 2026; 10:497. <a href="https://doi.org/10.12688/wellcomeopenres.24771.2">doi:10.12688/wellcomeopenres.24771.2</a>. Cliff M, Perez Duque M, Salje H, Bita Fouda A, Latt A, Lingani C, Gayawan E, Trotter C. Spatiotemporal modelling of bacterial meningitis outbreaks using climatic drivers in Africa. medRxiv 2026. <a href="https://doi.org/10.64898/2026.09.14.26363075">doi:10.64898/2026.09.14.26363075</a>. Their data: <a href="https://doi.org/10.6084/m9.figshare.29900975">doi:10.6084/m9.figshare.29900975</a> (CC BY 4.0).</p>
+      <p>Epidemics 2003&ndash;2022: Cliff M, Jahn S, Bita Fouda A, Latt A, Lingani C, Trotter C. Re-evaluating environmental associations with meningitis risk across Africa. Wellcome Open Research 2026; 10:497. <a href="https://doi.org/10.12688/wellcomeopenres.24771.2">doi:10.12688/wellcomeopenres.24771.2</a>. Cliff M, Perez Duque M, Salje H, Bita Fouda A, Latt A, Lingani C, Gayawan E, Trotter C. Spatiotemporal modelling of bacterial meningitis outbreaks using climatic drivers in Africa. medRxiv 2026. <a href="https://doi.org/10.64898/2026.09.14.26363075">doi:10.64898/2026.09.14.26363075</a>. Their data: <a href="https://doi.org/10.6084/m9.figshare.29900975">doi:10.6084/m9.figshare.29900975</a> (CC BY 4.0).</p>
       <p id="src-bull">Alerts and epidemics 2010&ndash;2020: WHO's weekly meningitis bulletins, read and extracted by hand by Zhengyang and ZhouZheng.</p>
       <p>District and region outlines: WHO's polio programme map, with WHO's boundary update of 14 October 2026; the Chad Ministry of Health's district map of 2020, from the Humanitarian Data Exchange; GADM 4.1 for Ak&eacute;bou and for reading Cliff's units.</p>
       <p>Background map: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.</p>
@@ -492,7 +492,7 @@
   const group = (rows, key) => { const m = new Map(); rows.forEach((r) => { const k = key(r); if (!m.has(k)) m.set(k, []); m.get(k).push(r); }); return m; };
   const clickRow = (fid) => (fid >= 0 ? '<tr class="click" data-k="d" data-id="' + fid + '">' : "<tr>");
 
-  // ---- Outbreaks 2003-22: Molly Cliff's published list. One row per district or unit and year, with the weeks in outbreak.
+  // ---- Outbreaks 2003-22: Molly Cliff's published list. One row per district or unit and year, with the weeks in epidemic.
   const CBRK = [1, 2, 3, 4, 6, 10];
   XV.cliff = {
     years: [2003, 2022], start: 2009,
@@ -509,7 +509,7 @@
     weeks(f, y) { return sum(this.rows(f, y).map((r) => r.w)); },
     fill(f) { const n = this.weeks(f, state.year); return n ? "var(--r" + (cls(n, CBRK) + 1) + ")" : "transparent"; },
     legend() {
-      return '<span class="lbl">Weeks in outbreak in ' + state.year + ", Cliff's list</span>" + labelsFor(CBRK).map((t, i) => "<span>" + swatch("var(--r" + (i + 1) + ")") + t + "</span>").join("") +
+      return '<span class="lbl">Weeks in epidemic in ' + state.year + ", Cliff's list</span>" + labelsFor(CBRK).map((t, i) => "<span>" + swatch("var(--r" + (i + 1) + ")") + t + "</span>").join("") +
         "<span>" + noneSw + "not in the list</span><span>" + unitSw + "an administrative unit holding several health districts</span>";
     },
     summary(cname) {
@@ -517,11 +517,13 @@
       for (let yy = this.years[0]; yy <= this.years[1]; yy++) per.push(all.filter((r) => r.y === yy).length);
       const gh = stats.countries.indexOf("Ghana");
       $("sumtitle").textContent = cname + ", " + y;
-      $("stats").innerHTML = stat(fmt(rows.length), "districts and units in outbreak in " + y) + stat(fmt(rows.filter((r) => r.k === 2).length), "of them units holding several districts") +
-        stat(fmt(sum(rows.map((r) => r.w))), "weeks in outbreak, added up") +
+      $("stats").innerHTML = stat(fmt(rows.length), "districts and units in epidemic in " + y) + stat(fmt(rows.filter((r) => r.k === 2).length), "of them units holding several districts") +
+        stat(fmt(sum(rows.map((r) => r.w))), "district-weeks in epidemic") +
+        (stats.years.indexOf(y) >= 0 ? (() => { let e = 0, n = 0; stats.countries.forEach((_, ci) => { if (!inSel(ci)) return; const t = (stats.thr[ci] || {})[y], k = ((stats.thrN || {})[ci] || {})[y]; if (t) e += sum(parseW(t[1])); if (k) n += k[1]; });
+          return stat(fmt(n), "districts that reached epidemic on WHO's dashboard in " + y) + stat(fmt(e), "district-weeks in epidemic on the dashboard"); })() : "") +
         stat(fmt(all.length), "district-years shown, 2003\u201322" + (inSel(gh) ? " (" + cliffData.leftOut + " more, Ghana 2016\u201319, left out)" : "")) +
-        '<div class="wide"><div class="hint">District-years in outbreak, by year</div>' +
-        spark(per, per.length, y - this.years[0] + 1, "var(--r4)", "district-years", { l0: String(this.years[0]), l1: String(this.years[1]), name: (i) => String(this.years[0] + i), label: "District-years in outbreak by year" }) + "</div>";
+        '<div class="wide"><div class="hint">District-years in epidemic, by year</div>' +
+        spark(per, per.length, y - this.years[0] + 1, "var(--r4)", "district-years", { l0: String(this.years[0]), l1: String(this.years[1]), name: (i) => String(this.years[0] + i), label: "District-years in epidemic by year" }) + "</div>";
     },
     history(pk, label) {
       const all = (this.place.get(pk) || []).slice().sort((a, b) => a.y - b.y); if (!all.length) return "";
@@ -531,10 +533,10 @@
       const y = state.year, rows = this.rows(f, y), p = f.properties; let h = "";
       if (!rows.length) h += "<dt>" + y + "</dt><dd>not in the list</dd></dl>";
       else {
-        rows.forEach((r) => { h += "<dt>" + y + "</dt><dd>" + (r.n !== p.n ? esc(r.n) + ": " : "") + pl(r.w, "week", "weeks") + " in outbreak" + (r.k === 2 ? ", added up over its districts" : "") + "</dd>"; });
+        rows.forEach((r) => { h += "<dt>" + y + "</dt><dd>" + (r.n !== p.n ? esc(r.n) + ": " : "") + pl(r.w, "week", "weeks") + " in epidemic" + (r.k === 2 ? ", added up over its districts" : "") + "</dd>"; });
         h += "</dl>";
         rows.forEach((r) => {
-          if (r.k === 2) h += '<p class="hint">' + esc(r.n) + " is an administrative unit that holds " + r.m.length + " health districts: " + r.m.map(esc).join(", ") + ". The list doesn't say which of them had the outbreak, so the whole unit is drawn.</p>";
+          if (r.k === 2) h += '<p class="hint">' + esc(r.n) + " is an administrative unit that holds " + r.m.length + " health districts: " + r.m.map(esc).join(", ") + ". The list doesn't say which of them had the epidemic, so the whole unit is drawn.</p>";
           else if (r.u) h += '<p class="hint">Her list calls it ' + esc(r.u) + ".</p>";
           if (r.t) h += '<p class="hint">' + esc(r.t) + "</p>";
         });
@@ -546,7 +548,7 @@
     tip(f) {
       const y = state.year, rows = this.rows(f, y);
       if (!rows.length) return '<div class="m">Not in the list in ' + y + "</div>";
-      return rows.map((r) => "<div>" + (r.n !== f.properties.n ? esc(r.n) + ": " : "") + pl(r.w, "week", "weeks") + " in outbreak in " + y + "</div>" +
+      return rows.map((r) => "<div>" + (r.n !== f.properties.n ? esc(r.n) + ": " : "") + pl(r.w, "week", "weeks") + " in epidemic in " + y + "</div>" +
         (r.k === 2 ? '<div class="m">A unit of ' + r.m.length + " health districts: " + r.m.map(esc).join(", ") + "</div>" : "")).join("");
     },
     lists() {
@@ -554,19 +556,19 @@
       $("list1title").textContent = "In outbreak, " + y;
       $("list1").innerHTML = rows.length ? '<table><thead><tr><th>District or unit</th><th>Country</th><th class="r">Weeks</th></tr></thead><tbody>' +
         rows.map((r) => clickRow(r.f) + "<td>" + esc(r.n) + (r.k === 2 ? '<span class="sm">unit of ' + r.m.length + " districts</span>" : "") + "</td><td>" + esc(countryName(r.c)) + '</td><td class="r">' + r.w + "</td></tr>").join("") + "</tbody></table>"
-        : '<p class="hint">The list has no outbreak here in ' + y + ".</p>";
+        : '<p class="hint">The list has no epidemic here in ' + y + ".</p>";
       $("list2").parentElement.hidden = true;
     },
     selection(list) {
       const y = state.year, rows = list.flatMap((f) => this.rows(f, y));
-      return "<dt>" + y + "</dt><dd>" + pl(rows.length, "district or unit", "districts and units") + " in outbreak \u00b7 " + pl(sum(rows.map((r) => r.w)), "week", "weeks") + "</dd>";
+      return "<dt>" + y + "</dt><dd>" + pl(rows.length, "district or unit", "districts and units") + " in epidemic \u00b7 " + pl(sum(rows.map((r) => r.w)), "week", "weeks") + "</dd>";
     },
     source() {
       const n = this.rowsAll.length, u = this.rowsAll.filter((r) => r.k === 2).length;
-      return "<p>The districts in outbreak each year, 2003\u20132022, and for how many weeks, from the list published by <b>Molly Cliff</b> and colleagues with their papers (see Sources below). They count a week as an outbreak week at 10 or more cases per 100,000 people.</p>" +
+      return "<p>The districts in epidemic each year, 2003\u20132022, and for how many weeks, from the list published by <b>Molly Cliff</b> and colleagues with their papers (see Sources below). Their &ldquo;outbreak&rdquo; is what the other tabs call an epidemic: a week at 10 or more cases per 100,000 people. Alerts are not in the list.</p>" +
         "<p><b>" + fmt(n) + " district-years</b> are shown for the nine countries, of " + fmt(cliffData.listed) + " in her list." + (cliffData.underReview ? " The link to a district is under review for " + cliffData.underReview + " of them (Niamey, 2015 and 2016)." : "") + "</p>" +
         "<p><b>Units, not always districts.</b> Her list uses administrative units. " + u + " of the " + fmt(n) + " are units that hold several health districts, such as a province in Burkina Faso or a department in Cameroon. " +
-        "The list doesn't say which district had the outbreak, so the unit is drawn whole, with a dashed outline, and its weeks are added up over its districts.</p>" +
+        "The list doesn't say which district had the epidemic, so the unit is drawn whole, with a dashed outline, and its weeks are added up over its districts.</p>" +
         "<p><b>Ghana, 2016\u20132019, left out.</b> Her " + cliffData.leftOut + " Ghana rows for these years look attached to the wrong districts: they sit around Tamale and Accra, several in districts WHO's map shows only from 2019, while WHO's bulletins for the same years name districts in Upper West. This has not been confirmed with the authors.</p>";
     },
   };
@@ -971,10 +973,10 @@
       const noOutline = stats.countries.reduce((k, _, ci) => k + (inSel(ci) ? ((stats.unmatched[ci] || {})[y] || []).filter((u) => { const c = (u[6] || "").split(""); return weekMode() ? c[w - 1] === "1" || c[w - 1] === "2" : c.some((x) => x === "1" || x === "2"); }).length : 0), 0);
       $("sumtitle").textContent = cname + (weekMode() ? ", week " + w + " " : ", ") + y;
       S.innerHTML = weekMode()
-        ? stat(fmt(over), "districts over the threshold") + stat(fmt(epi), "of them in epidemic") + stat(fmt(over - epi), "in alert") + (isReg() ? "" : stat(fmt(noOutline), "of them with no outline"))
-        : isReg() ? stat(fmt(over), "district-weeks over the threshold") + stat(fmt(epi), "of them in epidemic") + stat(fmt(over - epi), "in alert")
+        ? stat(fmt(over), "districts in alert or epidemic") + stat(fmt(epi), "of them in epidemic") + stat(fmt(over - epi), "in alert") + (isReg() ? "" : stat(fmt(noOutline), "of them with no outline"))
+        : isReg() ? stat(fmt(over), "district-weeks in alert or epidemic") + stat(fmt(epi), "district-weeks in epidemic") + stat(fmt(over - epi), "district-weeks in alert")
         : (() => { let n = 0, e = 0; stats.countries.forEach((_, ci) => { const t = inSel(ci) && ((stats.thrN || {})[ci] || {})[y]; if (t) { n += t[0]; e += t[1]; } });
-            return stat(fmt(n), "districts over the threshold at least once") + stat(fmt(e), "of them reached epidemic") + stat(fmt(n - e), "alert only") + stat(fmt(noOutline), "of them with no outline"); })();
+            return stat(fmt(n), "districts in alert or epidemic at least once") + stat(fmt(e), "of them reached epidemic") + stat(fmt(n - e), "alert only") + stat(fmt(noOutline), "of them with no outline"); })();
     } else if (seasonView()) {
       $("sumtitle").textContent = cname + ", average year " + rangeTxt();
       if (!SEAS) { S.innerHTML = '<p class="hint">Loading\u2026</p>'; return; }
@@ -1408,7 +1410,7 @@
     state.week = peakWeek(state.year);
     $("loading").hidden = true;
     // the link can open a view and a state: #season, or #bulletins&year=2017&week=12&country=Niger&period=year&level=region&from=2022&to=2024&pin=Zinder
-    const VIEWS = { cases: "cases", thresholds: "thr", season: "season", boundaries: "bounds", outbreaks: "cliff", bulletins: "bull" }, H = {};
+    const VIEWS = { cases: "cases", thresholds: "thr", season: "season", boundaries: "bounds", outbreaks: "cliff", epidemics: "cliff", bulletins: "bull" }, H = {};
     location.hash.slice(1).split("&").filter(Boolean).forEach((t) => { const i = t.indexOf("="); if (i < 0) H[VIEWS[t] ? "view" : t] = t; else H[t.slice(0, i)] = decodeURIComponent(t.slice(i + 1)); });
     if (H.level === "region") state.level = "region";
     if (H.period === "year" || H.period === "week") state.period = H.period;
