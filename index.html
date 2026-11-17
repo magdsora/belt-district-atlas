@@ -190,7 +190,7 @@
       </div>
     </div>
     <div class="break" aria-hidden="true"></div>
-    <div class="ctl" id="yearctl"><label for="year">Year</label><input id="year" type="range" min="2021" max="2026" step="1" value="2025"><span class="yr" id="yearout">2025</span></div>
+    <div class="ctl" id="yearctl"><label for="year">Year</label><input id="year" type="range" min="2003" max="2026" step="1" value="2025"><span class="yr" id="yearout">2025</span><span class="dates" id="yearnote"></span></div>
     <div class="ctl" id="rangectl" hidden><label for="yfrom">Years</label><select id="yfrom" aria-label="First year"></select><span class="to">to</span><select id="yto" aria-label="Last year"></select></div>
     <div class="ctl" id="weekctl"><label for="week">Week</label><input id="week" type="range" min="1" max="52" step="1" value="11"><span class="yr" id="weekout">11</span><span class="dates" id="weekdates"></span></div>
     <button type="button" class="playbtn" id="play" aria-pressed="false">Play</button>
@@ -221,7 +221,7 @@
       <p><b>Cases</b> are suspected meningitis cases reported to WHO's meningitis dashboard, for one week or the whole year, from 2021. Districts with no cases are left blank; hatching means no report.</p>
       <p><b>Thresholds</b> are the dashboard's alerts and epidemics: epidemic at 10 or more cases per 100,000 people in a week, alert at 3 to 10 per 100,000 with at least 2 cases. Over a whole year, the colour counts the weeks spent over a threshold.</p>
       <p><b>Season</b> shows how bunched each district's cases are in the calendar, in an average year of the years you choose (full years only): each week is averaged over the years that reported it. Strength runs from 0, cases spread evenly through the year, to 1, all of them in the same week. A clear season is 0.5 or more, some season 0.25 to 0.5, and little or no season under 0.25. Districts with fewer than 20 cases in the period get no class. The chart splits each week's cases into those that came in weeks the district was over the threshold and the rest.</p>
-      <p><b>Epidemics 2003&ndash;22</b> shows Molly Cliff's published list of districts in epidemic, year by year, coloured by the number of weeks in epidemic. Her papers call these outbreaks; they are the same thing as an epidemic week in the other tabs, 10 or more cases per 100,000 people in a week, and alerts are not in her list. Her list uses administrative units. Where a unit holds several health districts it is drawn whole, with a dashed outline, because the list does not say which district had the epidemic.</p>
+      <p><b>Epidemics 2003&ndash;22</b> shows Molly Cliff's published list of districts in epidemic, year by year, coloured by her count for the year, which is the number of months that hold an epidemic week. Her papers call these outbreaks; an epidemic week is the same thing as in the other tabs, 10 or more cases per 100,000 people in a week, and alerts are not in her list. Her list uses administrative units. Where a unit holds several health districts it is drawn whole, with a dashed outline, because the list does not say which district had the epidemic.</p>
       <p id="foot-bull"><b>Bulletins 2010&ndash;20</b> shows the districts WHO's weekly bulletins named in alert or in epidemic, for one week or a whole year. The bulletins name only the districts over a threshold. Until 2015 an alert was called at 5 cases per 100,000, and from 2016 at 3, so alerts before 2016 are striped and can't be compared with later years. Epidemics, at 10 per 100,000, compare across all years.</p>
       <p><b>Boundary history</b> shows the district and region outlines for each year from 2015, for all 26 countries of the meningitis belt; the other views cover the nine study countries. Outlines that changed from the year before flash orange.</p>
       <p><b>Selecting:</b> click a district or region to keep its details on the right. Cmd-click (Ctrl-click on Windows) to select several and see their totals. Esc clears the selection.</p>
@@ -255,7 +255,7 @@
     region: { week: [1, 5, 10, 25, 50, 100], year: [1, 10, 30, 100, 300, 1000] },
   };
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const state = { level: "district", view: "cases", period: "week", year: 2025, week: 11, country: -1, pinned: null, hover: null, sel: new Set(), from: 2021, to: 2025, ymem: {} };
+  const state = { level: "district", view: "cases", period: "week", year: 2025, week: 11, country: -1, pinned: null, hover: null, sel: new Set(), from: 2021, to: 2025 };
   let cliffData = null, bullData = null, SEAS = null, seasLoad = null;
   const scache = new Map();
   let geo, rgeo, base, borders, stats, feats, rfeats, paths, rpaths, svg, g, zoom, width = 1000, height = 500, pathGen, projection;
@@ -293,11 +293,11 @@
   const XV = {};
   const xview = () => XV[state.view] || null;
   const isUnit = (f) => f.properties.t === "u";   // an administrative unit of Cliff's list that holds several districts
-  const isReg = () => state.level === "region" && !xview();
+  const isReg = () => state.level === "region" && !xview() && !gap();
   // Chad is drawn by province at district level in the views with cases (version 11); Boundary history and the two new tabs draw its districts
-  const chadByProv = () => !isReg() && (state.view === "cases" || state.view === "thr" || state.view === "season");
+  const chadByProv = () => !isReg() && !gap() && (state.view === "cases" || state.view === "thr" || state.view === "season");
   // the years an outline is shown in the views with cases can differ from the years it is in use (a district WHO's map has divided but the dashboard still reports whole)
-  const validD = (f, y) => (f.properties.dv ? f.properties.dv.indexOf(y) >= 0 : valid(f, y));
+  const validD = (f, y) => (f.properties.dv && y >= stats.years[0] ? f.properties.dv.indexOf(y) >= 0 : valid(f, y));
   function on(f, y) {
     if (f.kind === "r") return valid(f, y);
     const X = xview();
@@ -308,7 +308,7 @@
   const isoWeeks = (y) => { const p = (v) => (v + Math.floor(v / 4) - Math.floor(v / 100) + Math.floor(v / 400)) % 7; return p(y) === 4 || p(y - 1) === 3 ? 53 : 52; };
   const F = () => {
     const base = isReg() ? rfeats : chadByProv() ? distFeats : feats;
-    return state.view === "bounds" && beltReady ? base.concat(isReg() ? brfeats : bfeats) : base;
+    return state.view === "bounds" && beltReady && state.year >= 2015 ? base.concat(isReg() ? brfeats : bfeats) : base;   // the other 17 belt countries' outlines are held from 2015
   };
   const allSels = () => [paths, rpaths].concat(bpaths ? [bpaths, brpaths] : []);
   const isChadProv = (f) => f.kind === "r" && f.properties.c === CHAD;
@@ -326,7 +326,24 @@
   const deathsIn = (sparse, w) => { let d = 0; (sparse || []).forEach(([wk, n]) => { if (wk === w) d += n; }); return d; };
   const dataView = () => state.view === "cases" || state.view === "thr";
   const weekMode = () => (dataView() || state.view === "bull") && state.period === "week";
-  const yearRange = () => { const X = xview(); return X ? X.years : dataView() ? [stats.years[0], stats.years[stats.years.length - 1]] : [2015, 2026]; };
+  // One year bar for every tab (Magd, 17 Nov): it runs over all the years any source covers, and the year stays when the tab changes.
+  // cover() is the span of the tab's own source; outside it the tab says so instead of drawing anything.
+  const yearRange = () => [2003, stats.years[stats.years.length - 1]];
+  const cover = () => { const X = xview(); return X ? X.years : dataView() ? [stats.years[0], stats.years[stats.years.length - 1]] : yearRange(); };
+  const gap = () => state.view !== "season" && (state.year < cover()[0] || state.year > cover()[1]);
+  function gapTxt() {
+    const y = state.year, [a, b] = cover(), name = xview() ? xview().label : "WHO's dashboard";
+    const tabs = [["Cases and Thresholds", [stats.years[0], stats.years[stats.years.length - 1]], dataView()], ["Epidemics", [2003, 2022], state.view === "cliff"], ["Bulletins", [2010, 2020], state.view === "bull"]];
+    const other = tabs.filter(([, c, here]) => !here && y >= c[0] && y <= c[1]).map((t) => t[0]);
+    return name + " covers " + a + "\u2013" + b + ", so this tab has nothing for " + y + "." + (other.length ? " " + y + " is in " + other.join(" and ") + "." : "");
+  }
+  const GAPV = {
+    fill: () => "transparent", detail: () => "</dl>", tip: () => "", selection: () => "",
+    legend: () => '<span class="lbl">' + gapTxt() + "</span>",
+    summary(cname) { $("sumtitle").textContent = cname + ", " + state.year; $("stats").innerHTML = '<p class="hint" style="grid-column:1/-1">' + gapTxt() + "</p>"; },
+    lists() { $("list1title").textContent = "Nothing for " + state.year; $("list1").innerHTML = '<p class="hint">' + gapTxt() + "</p>"; $("list2").parentElement.hidden = true; },
+  };
+  const pv = () => (gap() ? GAPV : xview());   // what draws the tab: the gap notice, one of the two new tabs, or (null) the dashboard views
   const TBRK = { district: [1, 2, 4, 8, 12, 20], regionWeek: [1, 2, 3, 5, 10, 20], regionYear: [1, 5, 10, 25, 50, 100] };
   const STATUS_TXT = ["below the threshold", "in alert", "in epidemic"];
   // threshold status per week (the dashboard's alerts and epidemics, pulled by v257): districts give 2 epidemic, 1 alert, 0 below, null no report;
@@ -492,10 +509,10 @@
   const group = (rows, key) => { const m = new Map(); rows.forEach((r) => { const k = key(r); if (!m.has(k)) m.set(k, []); m.get(k).push(r); }); return m; };
   const clickRow = (fid) => (fid >= 0 ? '<tr class="click" data-k="d" data-id="' + fid + '">' : "<tr>");
 
-  // ---- Outbreaks 2003-22: Molly Cliff's published list. One row per district or unit and year, with the weeks in epidemic.
+  // ---- Outbreaks 2003-22: Molly Cliff's published list. One row per district or unit and year, with her count of 'outbreaks per year': the months that hold an epidemic week.
   const CBRK = [1, 2, 3, 4, 6, 10];
   XV.cliff = {
-    years: [2003, 2022], start: 2009,
+    years: [2003, 2022], label: "Cliff's list",
     init() {
       this.rowsAll = cliffData.rows;
       this.rowsAll.forEach((r) => { const f = byKey.get("d" + r.f); r.pk = isUnit(f) ? "u" + r.c + "|" + r.n : f.properties.d; });
@@ -509,7 +526,7 @@
     weeks(f, y) { return sum(this.rows(f, y).map((r) => r.w)); },
     fill(f) { const n = this.weeks(f, state.year); return n ? "var(--r" + (cls(n, CBRK) + 1) + ")" : "transparent"; },
     legend() {
-      return '<span class="lbl">Weeks in epidemic in ' + state.year + ", Cliff's list</span>" + labelsFor(CBRK).map((t, i) => "<span>" + swatch("var(--r" + (i + 1) + ")") + t + "</span>").join("") +
+      return '<span class="lbl">Months in epidemic in ' + state.year + ", Cliff's list</span>" + labelsFor(CBRK).map((t, i) => "<span>" + swatch("var(--r" + (i + 1) + ")") + t + "</span>").join("") +
         "<span>" + noneSw + "not in the list</span><span>" + unitSw + "an administrative unit holding several health districts</span>";
     },
     summary(cname) {
@@ -518,22 +535,22 @@
       const gh = stats.countries.indexOf("Ghana");
       $("sumtitle").textContent = cname + ", " + y;
       $("stats").innerHTML = stat(fmt(rows.length), "districts and units in epidemic in " + y) + stat(fmt(rows.filter((r) => r.k === 2).length), "of them units holding several districts") +
-        stat(fmt(sum(rows.map((r) => r.w))), "district-weeks in epidemic") +
-        (stats.years.indexOf(y) >= 0 ? (() => { let e = 0, n = 0; stats.countries.forEach((_, ci) => { if (!inSel(ci)) return; const t = (stats.thr[ci] || {})[y], k = ((stats.thrN || {})[ci] || {})[y]; if (t) e += sum(parseW(t[1])); if (k) n += k[1]; });
-          return stat(fmt(n), "districts that reached epidemic on WHO's dashboard in " + y) + stat(fmt(e), "district-weeks in epidemic on the dashboard"); })() : "") +
+        stat(fmt(sum(rows.map((r) => r.w))), "district-months in epidemic") +
+        (stats.years.indexOf(y) >= 0 ? (() => { let e = 0, n = 0; stats.countries.forEach((_, ci) => { if (!inSel(ci)) return; const t = (stats.thr[ci] || {})[y], k = ((stats.thrN || {})[ci] || {})[y]; if (t) e += ((stats.thrM || {})[ci] || {})[y] || 0; if (k) n += k[1]; });
+          return stat(fmt(n), "districts that reached epidemic on WHO's dashboard in " + y) + stat(fmt(e), "district-months in epidemic on the dashboard"); })() : "") +
         stat(fmt(all.length), "district-years shown, 2003\u201322" + (inSel(gh) ? " (" + cliffData.leftOut + " more, Ghana 2016\u201319, left out)" : "")) +
         '<div class="wide"><div class="hint">District-years in epidemic, by year</div>' +
         spark(per, per.length, y - this.years[0] + 1, "var(--r4)", "district-years", { l0: String(this.years[0]), l1: String(this.years[1]), name: (i) => String(this.years[0] + i), label: "District-years in epidemic by year" }) + "</div>";
     },
     history(pk, label) {
       const all = (this.place.get(pk) || []).slice().sort((a, b) => a.y - b.y); if (!all.length) return "";
-      return '<div class="names"><span class="sm">' + label + "</span>" + all.map((r) => r.y + " (" + r.w + ")").join(", ") + ' <span class="sm">year (weeks)</span></div>';
+      return '<div class="names"><span class="sm">' + label + "</span>" + all.map((r) => r.y + " (" + r.w + ")").join(", ") + ' <span class="sm">year (months)</span></div>';
     },
     detail(f) {
       const y = state.year, rows = this.rows(f, y), p = f.properties; let h = "";
       if (!rows.length) h += "<dt>" + y + "</dt><dd>not in the list</dd></dl>";
       else {
-        rows.forEach((r) => { h += "<dt>" + y + "</dt><dd>" + (r.n !== p.n ? esc(r.n) + ": " : "") + pl(r.w, "week", "weeks") + " in epidemic" + (r.k === 2 ? ", added up over its districts" : "") + "</dd>"; });
+        rows.forEach((r) => { h += "<dt>" + y + "</dt><dd>" + (r.n !== p.n ? esc(r.n) + ": " : "") + pl(r.w, "month", "months") + " in epidemic" + (r.k === 2 ? ", added up over its districts" : "") + "</dd>"; });
         h += "</dl>";
         rows.forEach((r) => {
           if (r.k === 2) h += '<p class="hint">' + esc(r.n) + " is an administrative unit that holds " + r.m.length + " health districts: " + r.m.map(esc).join(", ") + ". The list doesn't say which of them had the epidemic, so the whole unit is drawn.</p>";
@@ -548,27 +565,27 @@
     tip(f) {
       const y = state.year, rows = this.rows(f, y);
       if (!rows.length) return '<div class="m">Not in the list in ' + y + "</div>";
-      return rows.map((r) => "<div>" + (r.n !== f.properties.n ? esc(r.n) + ": " : "") + pl(r.w, "week", "weeks") + " in epidemic in " + y + "</div>" +
+      return rows.map((r) => "<div>" + (r.n !== f.properties.n ? esc(r.n) + ": " : "") + pl(r.w, "month", "months") + " in epidemic in " + y + "</div>" +
         (r.k === 2 ? '<div class="m">A unit of ' + r.m.length + " health districts: " + r.m.map(esc).join(", ") + "</div>" : "")).join("");
     },
     lists() {
       const y = state.year, rows = this.rowsAll.filter((r) => r.y === y && inSel(r.c)).sort((a, b) => b.w - a.w || a.n.localeCompare(b.n));
       $("list1title").textContent = "In outbreak, " + y;
-      $("list1").innerHTML = rows.length ? '<table><thead><tr><th>District or unit</th><th>Country</th><th class="r">Weeks</th></tr></thead><tbody>' +
+      $("list1").innerHTML = rows.length ? '<table><thead><tr><th>District or unit</th><th>Country</th><th class="r">Months</th></tr></thead><tbody>' +
         rows.map((r) => clickRow(r.f) + "<td>" + esc(r.n) + (r.k === 2 ? '<span class="sm">unit of ' + r.m.length + " districts</span>" : "") + "</td><td>" + esc(countryName(r.c)) + '</td><td class="r">' + r.w + "</td></tr>").join("") + "</tbody></table>"
         : '<p class="hint">The list has no epidemic here in ' + y + ".</p>";
       $("list2").parentElement.hidden = true;
     },
     selection(list) {
       const y = state.year, rows = list.flatMap((f) => this.rows(f, y));
-      return "<dt>" + y + "</dt><dd>" + pl(rows.length, "district or unit", "districts and units") + " in epidemic \u00b7 " + pl(sum(rows.map((r) => r.w)), "week", "weeks") + "</dd>";
+      return "<dt>" + y + "</dt><dd>" + pl(rows.length, "district or unit", "districts and units") + " in epidemic \u00b7 " + pl(sum(rows.map((r) => r.w)), "month", "months") + "</dd>";
     },
     source() {
       const n = this.rowsAll.length, u = this.rowsAll.filter((r) => r.k === 2).length;
-      return "<p>The districts in epidemic each year, 2003\u20132022, and for how many weeks, from the list published by <b>Molly Cliff</b> and colleagues with their papers (see Sources below). Their &ldquo;outbreak&rdquo; is what the other tabs call an epidemic: a week at 10 or more cases per 100,000 people. Alerts are not in the list.</p>" +
+      return "<p>The districts in epidemic each year, 2003\u20132022, and for how many months, from the list published by <b>Molly Cliff</b> and colleagues with their papers (see Sources below). Their &ldquo;outbreak&rdquo; is what the other tabs call an epidemic: a week at 10 or more cases per 100,000 people. Alerts are not in the list. The file gives the count as &ldquo;outbreaks per year&rdquo; with no unit. It is shown as months because it equals the number of months that hold an epidemic week on WHO's dashboard in all 11 district-years the two share (2021\u201322), and does not equal the number of weeks.</p>" +
         "<p><b>" + fmt(n) + " district-years</b> are shown for the nine countries, of " + fmt(cliffData.listed) + " in her list." + (cliffData.underReview ? " The link to a district is under review for " + cliffData.underReview + " of them (Niamey, 2015 and 2016)." : "") + "</p>" +
         "<p><b>Units, not always districts.</b> Her list uses administrative units. " + u + " of the " + fmt(n) + " are units that hold several health districts, such as a province in Burkina Faso or a department in Cameroon. " +
-        "The list doesn't say which district had the epidemic, so the unit is drawn whole, with a dashed outline, and its weeks are added up over its districts.</p>" +
+        "The list doesn't say which district had the epidemic, so the unit is drawn whole, with a dashed outline, and its months are added up over its districts.</p>" +
         "<p><b>Ghana, 2016\u20132019, left out.</b> Her " + cliffData.leftOut + " Ghana rows for these years look attached to the wrong districts: they sit around Tamale and Accra, several in districts WHO's map shows only from 2019, while WHO's bulletins for the same years name districts in Upper West. This has not been confirmed with the authors.</p>";
     },
   };
@@ -578,7 +595,7 @@
   // flags: 1 alert under the old line of 5 per 100,000 (before 2016), 2 link to check, 4 still to verify, 8 drawn inside the district it was cut from, 16 drawn on its earlier outline
   const BBRK = [1, 2, 3, 5, 8, 12];
   XV.bull = {
-    years: [2010, 2020], start: 2016,
+    years: [2010, 2020], label: "The bulletin extraction",
     init() { this.rowsAll = bullData.rows; this.idx = group(this.rowsAll.filter((r) => r[4] >= 0), (r) => r[4] + "|" + r[1]); },
     enter() { if (!this.seen) { this.seen = true; state.week = this.peakWeek(state.year); } },
     peakWeek(y) { const t = this.perWeek(this.rowsAll.filter((r) => r[1] === y)); const all = t.ep.map((v, i) => v + t.al[i]); return all.indexOf(Math.max(...all)) + 1; },
@@ -684,10 +701,17 @@
           by.map(([r, e, a]) => clickRow(r[4]) + "<td>" + esc(r[9]) + "</td><td>" + esc(countryName(r[0])) + '</td><td class="r">' + e + '</td><td class="r">' + a + "</td></tr>").join("") + "</tbody></table>"
           : '<p class="hint">The bulletins name no district here in ' + y + ".</p>";
       }
-      const un = rows.filter((r) => r[4] < 0);
-      $("list2title").textContent = "Named in " + y + " but not placed on the map";
-      L2.innerHTML = un.length ? this.table(un, (r) => r[8] + ", " + countryName(r[0])) + '<p class="hint">The bulletin\'s name fits more than one district, and it doesn\'t say which.</p>' : "";
-      L2.parentElement.hidden = !un.length;
+      // how complete the bulletins are: one row per country for the year shown, or per year when one country is chosen
+      const un = rows.filter((r) => r[4] < 0), K = bullData.complete || {}, one = state.country >= 0;
+      const line = (label, v, bold) => { const short = v[3] != null && v[2] < v[3], thin = v[1] && v[0] / v[1] < 0.75;
+        return "<tr><td>" + (bold ? "<b>" + label + "</b>" : label) + '</td><td class="r">' + v[0] + " of " + v[1] + (thin ? '<span class="tag">gaps</span>' : "") + '</td><td class="r">' + v[2] + '</td><td class="r">' + (v[3] == null ? "\u2014" : v[3]) + (short ? '<span class="tag">more</span>' : "") + "</td></tr>"; };
+      const body = one ? Object.keys(K[state.country] || {}).map((yy) => line(yy, K[state.country][yy], +yy === y)).join("")
+        : stats.countries.map((c, ci) => (K[ci] && K[ci][y] ? line(esc(c), K[ci][y], false) : "")).join("");
+      $("list2title").textContent = "How complete the bulletins are, " + (one ? countryName(state.country) : y);
+      L2.innerHTML = '<table><thead><tr><th>' + (one ? "Year" : "Country") + '</th><th class="r">Weeks 1\u201326 with a figure</th><th class="r">Epidemic districts named</th><th class="r">WHO\'s year-end count</th></tr></thead><tbody>' + body + "</tbody></table>" +
+        '<p class="hint">A bulletin with no figure for a country says nothing about its districts that week. Where WHO\'s own year-end count of epidemic districts is above the number the weekly bulletins named, epidemics were reported late and are missing here. 2018 has no year-end table.</p>' +
+        (un.length ? '<p class="hint"><b>Named in ' + y + " but not placed on the map:</b></p>" + this.table(un, (r) => r[8] + ", " + countryName(r[0])) + '<p class="hint">The bulletin\'s name fits more than one district, and it doesn\'t say which.</p>' : "");
+      L2.parentElement.hidden = false;
     },
     selection(list) {
       const y = state.year, rows = list.flatMap((f) => this.rows(f, y)), ne = rows.filter((r) => r[5] === 2).length;
@@ -699,12 +723,13 @@
         "<b>" + fmt(n) + " district-weeks</b> in the nine countries, " + fmt(n - un) + " of them placed on the map.</p>" +
         "<p><b>Alerts compare only from 2016.</b> Until 2015 an alert was called at 5 cases per 100,000, from 2016 at 3. The " + fmt(old) + " alerts of 2010\u201315 are striped and can't be compared with later years. Epidemics were called at 10 per 100,000 in every year and compare across all of them.</p>" +
         "<p><b>What the bulletins leave out.</b> They name a district only when it is over a threshold, and give no figure for the others. Some weeks have no bulletin, and outside the season one bulletin covers four or five weeks. A blank district was not named; that is not the same as no cases.</p>" +
+        "<p><b>How complete, by country.</b> The table further down gives, for each country and year, how many in-season bulletins carry a figure for it and how many epidemic districts they name against WHO's own year-end count. Benin, Burkina Faso, Chad, Niger and Togo are nearly complete in most years. Cameroon is not: its weekly bulletins carry almost none of its epidemics. Nigeria in 2017 names 20 of WHO's 35 epidemic districts.</p>" +
         "<p>" + chk + " of the " + fmt(n) + " rows are still being checked against the bulletin, and " + un + " could not be placed because the name fits two districts. Each row links to its bulletin.</p>";
     },
   };
 
   function fillFor(f) {
-    const X = xview(); if (X) return X.fill(f);
+    const X = pv(); if (X) return X.fill(f);
     if (state.view === "bounds") return "transparent";
     if (state.view === "thr") return thrFill(f);
     if (seasonView()) return seasonFill(f);
@@ -747,10 +772,10 @@
     $("p-year").setAttribute("aria-pressed", state.period === "year");
     $("lvlctl").hidden = !!xview();
     $("periodctl").hidden = !(dataView() || state.view === "bull");
-    $("weekctl").hidden = !weekMode();
+    $("weekctl").hidden = !weekMode() || gap();
     $("yearctl").hidden = seasonView(); $("play").hidden = seasonView(); $("rangectl").hidden = !seasonView();
     $("yfrom").value = state.from; $("yto").value = state.to;
-    if (!seasonView()) { const [y0, y1] = yearRange(); yr.min = y0; yr.max = y1; state.year = Math.min(y1, Math.max(y0, state.year)); }
+    if (!seasonView()) { const [y0, y1] = yearRange(), c = cover(); yr.min = y0; yr.max = y1; state.year = Math.min(y1, Math.max(y0, state.year)); $("yearnote").textContent = c[0] === y0 && c[1] === y1 ? "" : "this tab: " + c[0] + "\u2013" + c[1]; }
     yr.value = state.year;
     wk.max = nweeksOf(state.year);
     if (state.week > +wk.max) state.week = +wk.max;
@@ -765,15 +790,15 @@
     const old = state.view, before = state.year, wasBounds = old === "bounds";
     if (v === "bounds") loadBelt();
     if (v === "season") loadSeason();
-    // every source has its own years: Cases, Thresholds and Boundary history share one year, each new tab remembers its own,
-    // and Season shows a range on the outlines of its last year
-    if (old !== "season") state.ymem[XV[old] ? old : "main"] = state.year;
+    // the year is shared by every tab. Entering a tab whose source doesn't cover it moves to the nearest year it does cover.
+    // Season shows a range on the outlines of its last year, and gives the year back on leaving.
+    if (v === "season" && old !== "season") state.yearBack = state.year;
+    if (old === "season" && v !== "season" && state.yearBack) state.year = state.yearBack;
     state.view = v;
     if (v === "season") state.year = state.to;
-    else if (XV[v]) state.year = state.ymem[v] || XV[v].start;
-    else { const y = state.ymem.main || 2025; state.year = v === "bounds" || y >= stats.years[0] ? y : 2025; }
+    else { const [a, b] = cover(); state.year = Math.min(b, Math.max(a, state.year)); }
     if (XV[v] && XV[v].enter) XV[v].enter();
-    if (state.year !== before || XV[v] || XV[old]) prevYear = null;
+    prevYear = null;
     render();
     if (wasBounds !== (v === "bounds")) fitSelection();
   }
@@ -791,7 +816,7 @@
     const y = state.year;
     const onLevel = (f) => (isReg() ? f.kind === "r" : f.properties.c === CHAD ? (chadByProv() ? f.kind === "r" : f.kind === "d") : f.kind === "d");
     const X = xview();
-    const shown = (f) => onLevel(f) && on(f, y) && (f.properties.c < NSTUDY || state.view === "bounds");
+    const shown = (f) => onLevel(f) && on(f, y) && (f.properties.c < NSTUDY || (state.view === "bounds" && y >= 2015));
     if (state.pinned && !shown(state.pinned)) state.pinned = null;
     state.sel.forEach((f) => { if (!shown(f)) state.sel.delete(f); });
     if (state.sel.size === 1) { state.pinned = [...state.sel][0]; state.sel.clear(); }
@@ -808,6 +833,8 @@
     allSels().forEach((sel) => sel.filter(picked).raise());
     renderChadLabels();
     $("srcpanel").hidden = !X; if (X) $("srcbody").innerHTML = X.source();
+    // in the Bulletins tab the completeness table sits straight under the summary
+    [[$("stats").parentElement, 0], [$("list2").parentElement, state.view === "bull" ? 1 : 5], [$("srcpanel"), 2], [$("detail"), 3], [$("list1").parentElement, 4]].forEach(([el, k]) => { el.style.order = k; });
     const step = !X && prevYear !== null && prevYear !== y && prevLevel === state.level;
     const changed = step ? F().filter((f) => on(f, y) && !on(f, prevYear) && inSel(f.properties.c) && !f.properties.k) : [];
     if (step) lastChanged = changed.length;
@@ -842,8 +869,8 @@
         state.week += 1; render();
       }, 900);
     } else {
-      const lo = +$("year").min, hi = +$("year").max;
-      if (state.year >= hi) { state.year = lo; prevYear = null; render(); }
+      const [lo, hi] = cover();   // Play runs over the years this tab's source covers
+      if (state.year >= hi || state.year < lo) { state.year = lo; prevYear = null; render(); }
       playTimer = setInterval(() => {
         if (state.year >= hi) { stopPlay(); return; }
         state.year += 1; render();
@@ -904,7 +931,7 @@
 
   function renderLegend() {
     const L = $("legend"), y = state.year;
-    if (xview()) { L.innerHTML = xview().legend(); return; }
+    if (pv()) { L.innerHTML = pv().legend(); return; }
     const hatch = '<span><svg width="14" height="10" style="vertical-align:-1px;margin-right:5px;border:1px solid var(--ring);border-radius:2px"><rect width="14" height="10" fill="url(#hatch)"/></svg>no report</span>';
     if (state.view === "cases") {
       L.innerHTML = '<span class="lbl">Cases per ' + unitWord(false) + (weekMode() ? " in week " + state.week + ", " + y : " in " + y) + "</span>" +
@@ -928,6 +955,7 @@
       L.innerHTML = '<span class="lbl">' + (isReg() ? "Region" : "District") + " outlines in use on 1 July " + y + '</span><span><span class="sw" style="background:transparent;border-color:var(--ink-2)"></span>outline</span>';
     }
     if (state.view === "bounds" || (dataView() && lastChanged)) L.innerHTML += '<span><span class="sw" style="background:var(--flash);opacity:0.6"></span>changed from the year before (flashes)</span>';
+    if (state.view === "bounds" && y < 2015) L.innerHTML += '<span class="lbl">Before 2015 only the nine study countries are drawn. WHO\'s records start in 2000 and its first change in these countries is dated 2016.</span>';
     if (state.view === "bounds" && !beltReady) L.innerHTML += '<span class="lbl">Loading the rest of the belt\u2026</span>';
     if (chadByProv() && inSel(CHAD)) L.innerHTML += '<span class="lbl">Chad is drawn by province: cases are summed over its districts' + (state.view === "thr" ? (weekMode() ? "; red if any of its districts is in epidemic, yellow if any is in alert; the number is how many of its districts were over the threshold that week" : "; red if any of its districts was in epidemic at some point in the year, yellow if any was in alert; the number is how many of its districts were over the threshold at least once") : "") + "</span>";
   }
@@ -947,7 +975,7 @@
     const leftover = unmatchedFor(y);
     const missLabel = isReg() ? "dashboard districts not placed in a region" : "dashboard districts with no outline";
     const missN = isReg() ? leftover.length : nDash - nLinked;
-    if (xview()) { xview().summary(cname); return; }
+    if (pv()) { pv().summary(cname); return; }
     if (state.view === "cases" && weekMode()) {
       $("sumtitle").textContent = cname + ", week " + w + " " + y;
       let cases = 0, deaths = 0, rep = 0, pos = 0;
@@ -1046,7 +1074,7 @@
     const nU = list.filter(isUnit).length;
     const what = isReg() ? pl(list.length, "region", "regions") : [nD - nU ? pl(nD - nU, "district", "districts") : "", nU ? pl(nU, "unit", "units") : "", nP ? pl(nP, "Chad province", "Chad provinces") : ""].filter(Boolean).join(" and ");
     let h = '<h2>Selection</h2><div class="nm">' + what + '</div><dl class="kv">', chart = "";
-    if (xview()) h += xview().selection(list);
+    if (pv()) h += pv().selection(list);
     else if (state.view === "cases") {
       const tot = new Array(n).fill(null);
       let cases = 0, deaths = 0, wd = 0, rep = 0, linked = 0;
@@ -1110,7 +1138,7 @@
     let h = "<h2>" + (f === state.pinned && !state.hover ? "Pinned " + title.toLowerCase() : title) + "</h2>" +
       '<div class="nm">' + esc(p.n) + '</div><div class="where">' + where + "</div>" +
       '<dl class="kv">' + (isUnit(f) ? "" : "<dt>Outline</dt><dd>" + fmtDate(p.s) + " \u2192 " + fmtDate(p.e) + "</dd>");
-    if (xview()) h += xview().detail(f);
+    if (pv()) h += pv().detail(f);
     else if (state.view === "cases") {
       const st = statOf(f, y);
       if (st) {
@@ -1165,7 +1193,7 @@
 
   function renderUnmatched(y) {
     const L2 = $("list2");
-    if (xview()) return;   // the new tabs fill or hide this list themselves
+    if (pv()) return;   // the new tabs and the gap notice fill or hide this list themselves
     if (y < 2021 || seasonView() || state.country >= NSTUDY) { L2.parentElement.hidden = true; return; }
     const wk = weekMode(), w = state.week;
     const thr = state.view === "thr";
@@ -1190,7 +1218,7 @@
   function renderLists() {
     const y = state.year, L1 = $("list1"), w = state.week;
     const Word = isReg() ? "Region" : "District";
-    if (xview()) xview().lists();
+    if (pv()) pv().lists();
     else if (state.view === "cases") {
       const wk = weekMode();
       $("list1title").textContent = "Most cases, " + (wk ? "week " + w + " " : "") + y;
@@ -1260,7 +1288,7 @@
   function showTip(e, f) {
     const p = f.properties, T = $("tip"), y = state.year, w = state.week;
     let h = "<b>" + esc(p.n) + '</b><span class="m">' + (f.kind === "r" ? (isChadProv(f) ? "Province \u00b7 " : "") : esc(p.r) + " \u00b7 ") + esc(countryName(p.c)) + "</span>";
-    if (xview()) h += xview().tip(f);
+    if (pv()) h += pv().tip(f);
     else if (state.view === "cases") {
       const st = statOf(f, y);
       if (!st) h += '<div class="m">No dashboard data in ' + y + "</div>";
@@ -1419,7 +1447,7 @@
     if (+H.to && SY.indexOf(+H.to) >= 0) state.to = Math.max(state.from, +H.to);
     const v0 = VIEWS[H.view];
     if (v0 && v0 !== "cases" && (!/cliff|bull/.test(v0) || XV[v0])) setView(v0);
-    if (+H.year && !seasonView()) { const [y0, y1] = yearRange(); state.year = Math.min(y1, Math.max(y0, +H.year)); if (state.view === "bull" && !H.week) state.week = XV.bull.peakWeek(state.year); else if (dataView() && !H.week) state.week = peakWeek(state.year); }
+    if (+H.year && !seasonView()) { const [y0, y1] = yearRange(); state.year = Math.min(y1, Math.max(y0, +H.year)); if (gap()) state.week = 1; else if (state.view === "bull" && !H.week) state.week = XV.bull.peakWeek(state.year); else if (dataView() && !H.week) state.week = peakWeek(state.year); }
     if (+H.week) state.week = Math.max(1, +H.week);
     if (H.pin) state.pinned = F().find((f) => on(f, state.year) && inSel(f.properties.c) && f.properties.n.toLowerCase() === H.pin.toLowerCase()) || null;
     prevYear = null; render();
