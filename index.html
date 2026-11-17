@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Weekly meningitis cases, alerts and epidemics from WHO's dashboard, by health district, for the African meningitis belt">
+<meta name="description" content="Meningitis cases, alerts and epidemics by health district in the African meningitis belt: WHO's dashboard from 2021, WHO's bulletins 2010-2020 and published outbreak lists from 2003">
 <style>html, body { margin: 0; }</style>
 <title>Belt District Atlas</title>
 <script>try { document.documentElement.dataset.theme = localStorage.getItem("atlas-theme") || "light"; } catch (e) { document.documentElement.dataset.theme = "light"; }</script>
@@ -65,7 +65,7 @@
   select { font: inherit; font-size: var(--t-s); color: var(--ink); background-color: var(--page); border: 1px solid var(--ink); border-radius: 0; padding: 6px 28px 6px 9px; appearance: none; -webkit-appearance: none;
     background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
     background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
-  .seg { display: inline-flex; border: 1px solid var(--ink); }
+  .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--ink); }
   .seg button { font: inherit; font-size: var(--t-s); border: 0; border-left: 1px solid var(--ink); background: transparent; color: var(--ink); padding: 6px 12px; cursor: pointer; }
   .seg button:first-child { border-left: 0; }
   .seg button[aria-pressed="true"] { background: var(--ink); color: var(--page); }
@@ -91,6 +91,7 @@
   #map path.d.reg { stroke-width: 0.9; }
   #map path.d.dim { opacity: 0.2; }
   #map path.d.hot { stroke: var(--hot); stroke-width: 1.5; }
+  #map path.d.unit { stroke: var(--ink); stroke-opacity: 0.9; stroke-width: 1.3; stroke-dasharray: 4 3; }
   #map path.d.pin { stroke: var(--accent); stroke-width: 2.4; }
   @keyframes flash { 0%, 40% { fill: var(--flash); fill-opacity: 0.5; stroke: var(--flash); stroke-width: 1.2px; } 100% { } }
   #map path.d.flash { animation: flash 2.6s ease-in-out both; }
@@ -136,6 +137,11 @@
   #map .clab { font-family: var(--sans); font-weight: 700; fill: var(--ink); paint-order: stroke; stroke: var(--page); stroke-width: 3px; stroke-linejoin: round; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
   .names { font-size: var(--t-s); color: var(--ink); }
   .names .sm { color: var(--ink-2); }
+  .src { display: grid; gap: 7px; font-size: var(--t-s); color: var(--ink-2); }
+  .src b { color: var(--ink); font-weight: 700; }
+  .src a, .detail a { color: var(--ink); text-underline-offset: 2px; }
+  .ctl .to { font-size: var(--t-s); color: var(--ink-2); }
+  .tag { display: inline-block; font-size: var(--t-xs); color: var(--ink-2); border: 1px solid var(--axis); padding: 0 4px; margin-left: 4px; }
   .textbtn { font: inherit; font-size: var(--t-s); background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; justify-self: start; }
   .foot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 32px; border-top: 2px solid var(--ink); padding-top: 14px; font-size: var(--t-s); color: var(--ink-2); }
   @media (max-width: 860px) { .foot { grid-template-columns: 1fr; } }
@@ -161,7 +167,7 @@
 
   <div class="controls" role="group" aria-label="Map controls">
     <div class="ctl"><label for="country">Country</label><select id="country"><option value="-1">All 9 countries</option></select></div>
-    <div class="ctl"><span class="lbl" id="lvllbl">Level</span>
+    <div class="ctl" id="lvlctl"><span class="lbl" id="lvllbl">Level</span>
       <div class="seg" role="group" aria-labelledby="lvllbl">
         <button id="l-dist" type="button" aria-pressed="true">Districts</button>
         <button id="l-reg" type="button" aria-pressed="false">Regions</button>
@@ -172,6 +178,8 @@
         <button id="v-cases" type="button" aria-pressed="true">Cases</button>
         <button id="v-thr" type="button" aria-pressed="false">Thresholds</button>
         <button id="v-season" type="button" aria-pressed="false">Season</button>
+        <button id="v-cliff" type="button" aria-pressed="false">Outbreaks 2003&ndash;22</button>
+        <button id="v-bull" type="button" aria-pressed="false" hidden>Bulletins 2010&ndash;20</button>
         <button id="v-bounds" type="button" aria-pressed="false">Boundary history</button>
       </div>
     </div>
@@ -183,6 +191,7 @@
     </div>
     <div class="break" aria-hidden="true"></div>
     <div class="ctl" id="yearctl"><label for="year">Year</label><input id="year" type="range" min="2021" max="2026" step="1" value="2025"><span class="yr" id="yearout">2025</span></div>
+    <div class="ctl" id="rangectl" hidden><label for="yfrom">Years</label><select id="yfrom" aria-label="First year"></select><span class="to">to</span><select id="yto" aria-label="Last year"></select></div>
     <div class="ctl" id="weekctl"><label for="week">Week</label><input id="week" type="range" min="1" max="52" step="1" value="11"><span class="yr" id="weekout">11</span><span class="dates" id="weekdates"></span></div>
     <button type="button" class="playbtn" id="play" aria-pressed="false">Play</button>
   </div>
@@ -199,6 +208,7 @@
 
     <aside>
       <div class="panel"><h2 id="sumtitle">Summary</h2><div class="stats" id="stats"></div></div>
+      <div class="panel" id="srcpanel" hidden><h2>About this tab</h2><div class="src" id="srcbody"></div></div>
       <div class="panel detail" id="detail"><h2>District</h2><p class="hint">Hover over the map for details. Click to keep one here, or Cmd-click (Ctrl-click) to add several and see their totals.</p></div>
       <div class="panel"><h2 id="list1title">Most cases</h2><div class="list" id="list1"></div></div>
       <div class="panel"><h2 id="list2title">Dashboard districts with no outline</h2><div class="list" id="list2"></div></div>
@@ -208,24 +218,28 @@
   <footer class="foot">
     <section>
       <h3>How to read it</h3>
-      <p><b>Cases</b> are suspected meningitis cases reported to WHO's meningitis dashboard, for one week or the whole year. Districts with no cases are left blank; hatching means no report.</p>
+      <p><b>Cases</b> are suspected meningitis cases reported to WHO's meningitis dashboard, for one week or the whole year, from 2021. Districts with no cases are left blank; hatching means no report.</p>
       <p><b>Thresholds</b> are the dashboard's alerts and epidemics: epidemic at 10 or more cases per 100,000 people in a week, alert at 3 to 10 per 100,000 with at least 2 cases. Over a whole year, the colour counts the weeks spent over a threshold.</p>
-      <p><b>Season</b> shows how bunched each district's cases are in the calendar, in an average year of 2021&ndash;25: each week is averaged over the years that reported it. Strength runs from 0, cases spread evenly through the year, to 1, all of them in the same week. A clear season is 0.5 or more, some season 0.25 to 0.5, and little or no season under 0.25. Districts with fewer than 20 cases get no class. The chart splits each week's cases into those that came in weeks the district was over the threshold and the rest.</p>
-      <p><b>Boundary history</b> shows WHO's district and region outlines for each year from 2015, for all 26 countries of the meningitis belt; the other views cover the nine study countries. Outlines that changed from the year before flash orange.</p>
+      <p><b>Season</b> shows how bunched each district's cases are in the calendar, in an average year of the years you choose (full years only): each week is averaged over the years that reported it. Strength runs from 0, cases spread evenly through the year, to 1, all of them in the same week. A clear season is 0.5 or more, some season 0.25 to 0.5, and little or no season under 0.25. Districts with fewer than 20 cases in the period get no class. The chart splits each week's cases into those that came in weeks the district was over the threshold and the rest.</p>
+      <p><b>Outbreaks 2003&ndash;22</b> shows Molly Cliff's published list of meningitis outbreaks, year by year, coloured by the number of weeks in outbreak. Her list uses administrative units. Where a unit holds several health districts it is drawn whole, with a dashed outline, because the list does not say which district had the outbreak.</p>
+      <p id="foot-bull"><b>Bulletins 2010&ndash;20</b> shows the districts WHO's weekly bulletins named in alert or in epidemic, for one week or a whole year. The bulletins name only the districts over a threshold. Until 2015 an alert was called at 5 cases per 100,000, and from 2016 at 3, so alerts before 2016 are striped and can't be compared with later years. Epidemics, at 10 per 100,000, compare across all years.</p>
+      <p><b>Boundary history</b> shows the district and region outlines for each year from 2015, for all 26 countries of the meningitis belt; the other views cover the nine study countries. Outlines that changed from the year before flash orange.</p>
       <p><b>Selecting:</b> click a district or region to keep its details on the right. Cmd-click (Ctrl-click on Windows) to select several and see their totals. Esc clears the selection.</p>
     </section>
     <section>
       <h3>Where the sources disagree</h3>
-      <p><b>Chad</b> lists far more districts in the dashboard (199 in 2026) than WHO's map has outlines (126, from 2017), so the views with cases show it by its 23 provinces, each adding up all its districts. Boundary history draws WHO's district outlines.</p>
-      <p><b>Districts with no outline</b> on WHO's map are counted in their region and named when you hover over it. They are never drawn on a guessed shape.</p>
-      <p><b>Split districts</b> that WHO's map doesn't draw, such as Bamako's communes, are drawn on the original district's outline, with their cases added up.</p>
-      <p><b>Boundary dates:</b> WHO's map dates a change to when the map was updated, often years late. Its records start in 2000. The first change it records is dated 2011 (Sudan and South Sudan), and 2016 in the nine study countries, where Ghana's 2012 districts appear only from 2018. After 2020 it showed no change until its update of 14 October 2026, which adds outlines dated 2025 in Cameroon, Benin, Kenya and Uganda, and 2021 in Ethiopia and Senegal. In Cameroon and Benin the new outlines are drawn from the first year the dashboard reports each new district (2021 to 2023), not from 2025. Benin's Abomey-Calavi and Porto-Novo stay whole: WHO splits each into three, but the dashboard still reports each as one district. Five new Cameroon districts and most of Chad's new ones still have no outline.</p>
-      <p><b>Names</b>: the dashboard and WHO's map share no district codes, so districts are matched by name. Most match exactly; each of the others (another spelling, an abbreviation, a renamed district) was checked one by one.</p>
+      <p><b>One ID per district.</b> The dashboard, the bulletins, Cliff's list and WHO's map share no district codes. Each name was linked once to a permanent district ID, and everything on this page is joined through those IDs. Names that did not match exactly were checked one by one.</p>
+      <p><b>Chad</b> lists far more districts in the dashboard (<span id="chadn">199</span> in <span id="chady">2026</span>) than any map has outlines (126), so the views with cases show it by its 23 provinces, each adding up all its districts. The other views draw its districts: WHO's outlines until 2016 and the Chad Ministry of Health's own map from 2017, because WHO's copy puts about a dozen names on the wrong outline.</p>
+      <p><b>Outlines in the wrong place.</b> Where WHO's outline misses the district's own town and another outline holds it, the other one is used: 15 districts in Cameroon before 2019, Agadez in Niger from 2017, Obuasi in Ghana before 2018 and Ak&eacute;bou in Togo. Ghana's Kwahu Afram Plains North and South carry each other's names on WHO's current map; here each name sits on the outline that holds its own town. The district's details say when an outline is not WHO's own for that year.</p>
+      <p><b>New districts.</b> A district newer than the map is drawn on the outline of the district it was cut from, with their cases added together: Bamako's sub-districts, Cotonou's six districts and eleven Cameroon districts before 2025, and Guan in Ghana. Five Cameroon districts whose parent is not known, and most of Chad's new ones, have no outline. They are counted in their region and listed, never drawn on a guessed shape.</p>
+      <p><b>Boundary dates.</b> WHO's map dates a change to when the map was updated, often years late. Its records start in 2000. The first change it records is dated 2011 (Sudan and South Sudan), and 2016 in the nine study countries, where Ghana's 2012 districts appear only from 2018. After 2020 it showed no change until its update of 14 October 2026, which adds outlines dated 2025 in Cameroon, Benin, Kenya and Uganda, and 2021 in Ethiopia and Senegal. They are used here from WHO's dates. WHO now divides Benin's Abomey-Calavi and Porto-Novo into three each, but the dashboard still reports each as one district, so the views with cases keep them whole.</p>
     </section>
     <section>
       <h3>Sources</h3>
-      <p>Cases, alerts and epidemics: WHO meningitis dashboard, downloaded 29 September 2026.</p>
-      <p>District and region outlines: WHO's polio programme map, with WHO's boundary update of 14 October 2026.</p>
+      <p>Cases, alerts and epidemics from 2021: WHO meningitis dashboard, downloaded <span id="pulled">10 November 2026</span>.</p>
+      <p>Outbreaks 2003&ndash;2022: Cliff M, Jahn S, Bita Fouda A, Latt A, Lingani C, Trotter C. Re-evaluating environmental associations with meningitis risk across Africa. Wellcome Open Research 2026; 10:497. <a href="https://doi.org/10.12688/wellcomeopenres.24771.2">doi:10.12688/wellcomeopenres.24771.2</a>. Cliff M, Perez Duque M, Salje H, Bita Fouda A, Latt A, Lingani C, Gayawan E, Trotter C. Spatiotemporal modelling of bacterial meningitis outbreaks using climatic drivers in Africa. medRxiv 2026. <a href="https://doi.org/10.64898/2026.09.14.26363075">doi:10.64898/2026.09.14.26363075</a>. Their data: <a href="https://doi.org/10.6084/m9.figshare.29900975">doi:10.6084/m9.figshare.29900975</a> (CC BY 4.0).</p>
+      <p id="src-bull">Alerts and epidemics 2010&ndash;2020: WHO's weekly meningitis bulletins, read and extracted by hand by Zhengyang and ZhouZheng.</p>
+      <p>District and region outlines: WHO's polio programme map, with WHO's boundary update of 14 October 2026; the Chad Ministry of Health's district map of 2020, from the Humanitarian Data Exchange; GADM 4.1 for Ak&eacute;bou and for reading Cliff's units.</p>
       <p>Background map: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.</p>
     </section>
   </footer>
@@ -241,7 +255,9 @@
     region: { week: [1, 5, 10, 25, 50, 100], year: [1, 10, 30, 100, 300, 1000] },
   };
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const state = { level: "district", view: "cases", period: "week", year: 2025, week: 11, country: -1, pinned: null, hover: null, sel: new Set() };
+  const state = { level: "district", view: "cases", period: "week", year: 2025, week: 11, country: -1, pinned: null, hover: null, sel: new Set(), from: 2021, to: 2025, ymem: {} };
+  let cliffData = null, bullData = null, SEAS = null, seasLoad = null;
+  const scache = new Map();
   let geo, rgeo, base, borders, stats, feats, rfeats, paths, rpaths, svg, g, zoom, width = 1000, height = 500, pathGen, projection;
   let prevYear = null, prevLevel = null, flashTimer = null, playTimer = null, lastChanged = 0, zoomK = 1;
   // v11: Chad is drawn by province at the district level (its district list changes every year and most new districts have no outline);
@@ -273,8 +289,23 @@
   const valid = (f, y) => f.properties.s <= mid(y) && mid(y) < f.properties.e;
   const cls = (c, br) => { let k = 0; for (let i = 0; i < br.length; i++) if (c >= br[i]) k = i; return k; };
   const labelsFor = (br) => br.map((b, i) => (i === br.length - 1 ? b + "+" : (br[i + 1] - 1 === b ? String(b) : b + "\u2013" + (br[i + 1] - 1))));
-  const isReg = () => state.level === "region";
-  const chadByProv = () => !isReg() && state.view !== "bounds";   // Chad is drawn by province at district level, except in Boundary history (version 28)
+  // the two tabs added in version 30 (Cliff's outbreak list, the bulletins) are objects in XV; they draw districts only
+  const XV = {};
+  const xview = () => XV[state.view] || null;
+  const isUnit = (f) => f.properties.t === "u";   // an administrative unit of Cliff's list that holds several districts
+  const isReg = () => state.level === "region" && !xview();
+  // Chad is drawn by province at district level in the views with cases (version 11); Boundary history and the two new tabs draw its districts
+  const chadByProv = () => !isReg() && (state.view === "cases" || state.view === "thr" || state.view === "season");
+  // the years an outline is shown in the views with cases can differ from the years it is in use (a district WHO's map has divided but the dashboard still reports whole)
+  const validD = (f, y) => (f.properties.dv ? f.properties.dv.indexOf(y) >= 0 : valid(f, y));
+  function on(f, y) {
+    if (f.kind === "r") return valid(f, y);
+    const X = xview();
+    if (X) return X.has(f, y) || (!isUnit(f) && valid(f, y));
+    if (isUnit(f)) return false;
+    return state.view === "bounds" ? valid(f, y) : validD(f, y);
+  }
+  const isoWeeks = (y) => { const p = (v) => (v + Math.floor(v / 4) - Math.floor(v / 100) + Math.floor(v / 400)) % 7; return p(y) === 4 || p(y - 1) === 3 ? 53 : 52; };
   const F = () => {
     const base = isReg() ? rfeats : chadByProv() ? distFeats : feats;
     return state.view === "bounds" && beltReady ? base.concat(isReg() ? brfeats : bfeats) : base;
@@ -284,7 +315,7 @@
   const chadProvAtDistrict = (f) => isChadProv(f) && chadByProv();
   const unitWord = (plural) => (isReg() ? (plural ? "regions" : "region") : state.country === CHAD && chadByProv() ? (plural ? "provinces" : "province") : (plural ? "districts" : "district"));
   const statOf = (f, y) => ((f.kind === "r" ? stats.byRegion : stats.byOutline)[f.id] || {})[y] || null;
-  const nweeksOf = (y) => stats.nweeks[y] || 52;
+  const nweeksOf = (y) => (xview() ? isoWeeks(y) : stats.nweeks[y] || 52);
   const parseW = (s) => s.split(",").map((v) => (v === "" ? null : +v));
   function weekly(f, y) {
     const st = statOf(f, y); if (!st) return null;
@@ -294,7 +325,8 @@
   }
   const deathsIn = (sparse, w) => { let d = 0; (sparse || []).forEach(([wk, n]) => { if (wk === w) d += n; }); return d; };
   const dataView = () => state.view === "cases" || state.view === "thr";
-  const weekMode = () => dataView() && state.period === "week";
+  const weekMode = () => (dataView() || state.view === "bull") && state.period === "week";
+  const yearRange = () => { const X = xview(); return X ? X.years : dataView() ? [stats.years[0], stats.years[stats.years.length - 1]] : [2015, 2026]; };
   const TBRK = { district: [1, 2, 4, 8, 12, 20], regionWeek: [1, 2, 3, 5, 10, 20], regionYear: [1, 5, 10, 25, 50, 100] };
   const STATUS_TXT = ["below the threshold", "in alert", "in epidemic"];
   // threshold status per week (the dashboard's alerts and epidemics, pulled by v257): districts give 2 epidemic, 1 alert, 0 below, null no report;
@@ -316,17 +348,57 @@
   const seasonView = () => state.view === "season";
   const pctTxt = (x) => (x == null ? "\u2014" : Math.round(100 * x) + "%");
   const fmt1 = (x) => (x >= 10 ? Math.round(x).toLocaleString("en-GB") : x.toFixed(1));
-  const yearsTxt = (s) => { const [a, b] = String(s || "").split("-"); return !a ? "2021\u201325" : a === b ? a : a + "\u2013" + b.slice(2); };
-  function seasonDecode(e) {
-    const ny = e[2] ? e[2].split("").map(Number) : new Array(52).fill(stats.seasons.years.length);
-    const cs = e[0] ? e[0].split(",").map(Number) : new Array(52).fill(0);
-    const os = e[1] ? e[1].split(",").map(Number) : new Array(52).fill(0);
-    return { c: cs.map((v, i) => (ny[i] ? v / ny[i] : 0)), o: os.map((v, i) => (ny[i] ? v / ny[i] : 0)), total: sum(cs), years: e[3] };
+  const rangeTxt = () => (state.from === state.to ? String(state.from) : state.from + "\u2013" + String(state.to).slice(2));
+  const yearsTxt = (s) => { const [a, b] = String(s || "").split("-"); return !a ? rangeTxt() : a === b ? a : a + "\u2013" + b.slice(2); };
+  // version 30: the Season view adds up any range of full years from each district's own years, following the district through its ID.
+  // The file loads the first time the view opens.
+  function loadSeason() {
+    if (!seasLoad) seasLoad = fetch("data/season.json").then((r) => r.json()).then((d) => { d.idx = {}; d.dec = new Map(); SEAS = d; scache.clear(); if (seasonView()) render(); }).catch(() => { seasLoad = null; });
+    return seasLoad;
+  }
+  // which districts are drawn on each outline, and counted in each region and country, in the last year of the range
+  function seasonIndex(b) {
+    if (SEAS.idx[b]) return SEAS.idx[b];
+    const bi = SEAS.years.indexOf(b), d = new Map(), r = new Map(), c = new Map();
+    const push = (m, k, did) => { if (k == null || k < 0) return; if (!m.has(k)) m.set(k, []); m.get(k).push(did); };
+    Object.keys(SEAS.d).forEach((did) => { push(d, SEAS.f[did][bi], did); push(r, SEAS.r[did][bi], did); push(c, SEAS.c[did.slice(0, 3)], did); });
+    return (SEAS.idx[b] = { d, r, c });
+  }
+  // one district's year: weekly cases (null where it did not report) and the cases that came in weeks it was over the threshold
+  function seasonYear(did, y) {
+    const k = did + "|" + y; let v = SEAS.dec.get(k);
+    if (v === undefined) {
+      const e = (SEAS.d[did] || {})[y];
+      if (e === undefined) v = null;
+      else if (e === 0) v = { w: new Array(52).fill(0), o: null };
+      else { const o = new Array(52).fill(0); e[1].forEach(([wk, n]) => { o[wk - 1] = n; }); v = { w: parseW(e[0]), o }; }
+      SEAS.dec.set(k, v);
+    }
+    return v;
+  }
+  // the average year of a set of districts over the chosen years: each week is averaged over the years that reported it
+  function seasonFor(dids) {
+    const cs = new Array(52).fill(0), os = new Array(52).fill(0), ny = new Array(52).fill(0); let y0 = null, y1 = null;
+    for (let y = state.from; y <= state.to; y++) {
+      if (SEAS.years.indexOf(y) < 0) continue;
+      let tot = null, ov = null;
+      dids.forEach((did) => {
+        const v = seasonYear(did, y); if (!v) return;
+        if (!tot) { tot = new Array(52).fill(null); ov = new Array(52).fill(0); }
+        v.w.forEach((x, i) => { if (x != null) { tot[i] = (tot[i] || 0) + x; if (v.o) ov[i] += v.o[i]; } });
+      });
+      if (!tot) continue;
+      if (y0 == null) y0 = y; y1 = y;
+      tot.forEach((x, i) => { if (x != null) { cs[i] += x; os[i] += ov[i]; ny[i]++; } });
+    }
+    if (y0 == null) return null;
+    return { c: cs.map((v, i) => (ny[i] ? v / ny[i] : 0)), o: os.map((v, i) => (ny[i] ? v / ny[i] : 0)), total: sum(cs), years: y0 + "-" + y1 };
   }
   function seasonOf(f) {
-    const k = "z" + f.kind + f.id;
-    if (!wcache.has(k)) { const e = ((f.kind === "r" ? stats.seasons.r : stats.seasons.d) || {})[f.id]; wcache.set(k, e ? seasonDecode(e) : null); }
-    return wcache.get(k);
+    if (!SEAS) return null;
+    const k = f.kind + f.id;
+    if (!scache.has(k)) { const ix = seasonIndex(state.to); scache.set(k, seasonFor((f.kind === "r" ? ix.r : ix.d).get(f.id) || [])); }
+    return scache.get(k);
   }
   // units drawn for the same year don't overlap, so their average years add up
   function seasonAdd(list) {
@@ -334,7 +406,11 @@
     list.forEach((s) => { if (!s) return; out.total += s.total; s.c.forEach((v, i) => { out.c[i] += v; out.o[i] += s.o[i]; }); });
     return out;
   }
-  const seasonCountries = () => seasonAdd(stats.countries.map((_, ci) => (inSel(ci) && (stats.seasons.c || {})[ci] ? seasonDecode(stats.seasons.c[ci]) : null)));
+  const seasonCountries = () => seasonAdd(stats.countries.map((_, ci) => {
+    if (!SEAS || !inSel(ci)) return null;
+    if (!scache.has("c" + ci)) scache.set("c" + ci, seasonFor(seasonIndex(state.to).c.get(ci) || []));
+    return scache.get("c" + ci);
+  }));
   // strength: 0 when the cases are spread evenly through the year, 1 when they all fall in the same week
   function seasonMeasures(s) {
     const tot = sum(s.c); if (!tot) return { tot: 0, R: null, jan: null, out: null };
@@ -371,8 +447,8 @@
       if (hOut) r += '<rect x="' + x + '" y="' + (top + ph - hAll).toFixed(1) + '" width="' + bwid + '" height="' + Math.max(0.8, hOut - (hCalm > 0.5 ? 1 : 0)).toFixed(1) + '" fill="var(--outb)"/>';
       r += "</g>";
     });
-    return '<div class="hint">Average suspected cases in each week of the year, 2021\u201325</div>' +
-      '<svg class="season" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Average suspected cases in each week of the year, 2021 to 2025">' + r +
+    return '<div class="hint">Average suspected cases in each week of the year, ' + rangeTxt() + "</div>" +
+      '<svg class="season" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Average suspected cases in each week of the year">' + r +
       '<line x1="0" x2="' + W + '" y1="' + (top + ph) + '" y2="' + (top + ph) + '" stroke="var(--axis)" stroke-width="1"/>' +
       '<text x="' + (W - 1) + '" y="9" font-size="9" fill="var(--muted)" text-anchor="end">peak ' + fmt1(max) + " cases a week</text></svg>" +
       '<div class="legend slegend"><span><span class="sw" style="background:var(--calm)"></span>cases from districts below the threshold that week</span>' +
@@ -408,7 +484,225 @@
   }
   function inSel(ci) { return state.country < 0 || ci === state.country; }
 
+  // ================================================================== version 30: the two tabs on other sources
+  const swatch = (bg, extra) => '<span class="sw" style="background:' + bg + (extra || "") + '"></span>';
+  const noneSw = '<span class="sw" style="background:transparent;border-color:var(--ink-2)"></span>';
+  const oldSw = '<svg width="14" height="12" style="vertical-align:-2px;margin-right:6px;border:1px solid var(--ring)"><rect width="14" height="12" fill="url(#oldalert)"/></svg>';
+  const unitSw = '<svg width="16" height="12" style="vertical-align:-2px;margin-right:6px"><rect x="1" y="1" width="14" height="10" fill="none" stroke="var(--ink)" stroke-width="1.3" stroke-dasharray="4 3"/></svg>';
+  const group = (rows, key) => { const m = new Map(); rows.forEach((r) => { const k = key(r); if (!m.has(k)) m.set(k, []); m.get(k).push(r); }); return m; };
+  const clickRow = (fid) => (fid >= 0 ? '<tr class="click" data-k="d" data-id="' + fid + '">' : "<tr>");
+
+  // ---- Outbreaks 2003-22: Molly Cliff's published list. One row per district or unit and year, with the weeks in outbreak.
+  const CBRK = [1, 2, 3, 4, 6, 10];
+  XV.cliff = {
+    years: [2003, 2022], start: 2009,
+    init() {
+      this.rowsAll = cliffData.rows;
+      this.rowsAll.forEach((r) => { const f = byKey.get("d" + r.f); r.pk = isUnit(f) ? "u" + r.c + "|" + r.n : f.properties.d; });
+      this.idx = group(this.rowsAll, (r) => r.f + "|" + r.y);
+      this.place = group(this.rowsAll, (r) => r.pk);
+      this.unitsOf = new Map();   // a district's name -> the units of the list that hold it
+      this.rowsAll.forEach((r) => (r.m || []).forEach((nm) => { const k = r.c + "|" + nm; if (!this.unitsOf.has(k)) this.unitsOf.set(k, new Set()); this.unitsOf.get(k).add(r.pk); }));
+    },
+    rows(f, y) { return f.kind === "d" ? this.idx.get(f.id + "|" + y) || [] : []; },
+    has(f, y) { return f.kind === "d" && this.idx.has(f.id + "|" + y); },
+    weeks(f, y) { return sum(this.rows(f, y).map((r) => r.w)); },
+    fill(f) { const n = this.weeks(f, state.year); return n ? "var(--r" + (cls(n, CBRK) + 1) + ")" : "transparent"; },
+    legend() {
+      return '<span class="lbl">Weeks in outbreak in ' + state.year + ", Cliff's list</span>" + labelsFor(CBRK).map((t, i) => "<span>" + swatch("var(--r" + (i + 1) + ")") + t + "</span>").join("") +
+        "<span>" + noneSw + "not in the list</span><span>" + unitSw + "an administrative unit holding several health districts</span>";
+    },
+    summary(cname) {
+      const y = state.year, all = this.rowsAll.filter((r) => inSel(r.c)), rows = all.filter((r) => r.y === y), per = [];
+      for (let yy = this.years[0]; yy <= this.years[1]; yy++) per.push(all.filter((r) => r.y === yy).length);
+      const gh = stats.countries.indexOf("Ghana");
+      $("sumtitle").textContent = cname + ", " + y;
+      $("stats").innerHTML = stat(fmt(rows.length), "districts and units in outbreak in " + y) + stat(fmt(rows.filter((r) => r.k === 2).length), "of them units holding several districts") +
+        stat(fmt(sum(rows.map((r) => r.w))), "weeks in outbreak, added up") +
+        stat(fmt(all.length), "district-years shown, 2003\u201322" + (inSel(gh) ? " (" + cliffData.leftOut + " more, Ghana 2016\u201319, left out)" : "")) +
+        '<div class="wide"><div class="hint">District-years in outbreak, by year</div>' +
+        spark(per, per.length, y - this.years[0] + 1, "var(--r4)", "district-years", { l0: String(this.years[0]), l1: String(this.years[1]), name: (i) => String(this.years[0] + i), label: "District-years in outbreak by year" }) + "</div>";
+    },
+    history(pk, label) {
+      const all = (this.place.get(pk) || []).slice().sort((a, b) => a.y - b.y); if (!all.length) return "";
+      return '<div class="names"><span class="sm">' + label + "</span>" + all.map((r) => r.y + " (" + r.w + ")").join(", ") + ' <span class="sm">year (weeks)</span></div>';
+    },
+    detail(f) {
+      const y = state.year, rows = this.rows(f, y), p = f.properties; let h = "";
+      if (!rows.length) h += "<dt>" + y + "</dt><dd>not in the list</dd></dl>";
+      else {
+        rows.forEach((r) => { h += "<dt>" + y + "</dt><dd>" + (r.n !== p.n ? esc(r.n) + ": " : "") + pl(r.w, "week", "weeks") + " in outbreak" + (r.k === 2 ? ", added up over its districts" : "") + "</dd>"; });
+        h += "</dl>";
+        rows.forEach((r) => {
+          if (r.k === 2) h += '<p class="hint">' + esc(r.n) + " is an administrative unit that holds " + r.m.length + " health districts: " + r.m.map(esc).join(", ") + ". The list doesn't say which of them had the outbreak, so the whole unit is drawn.</p>";
+          else if (r.u) h += '<p class="hint">Her list calls it ' + esc(r.u) + ".</p>";
+          if (r.t) h += '<p class="hint">' + esc(r.t) + "</p>";
+        });
+      }
+      h += this.history(isUnit(f) ? "u" + p.c + "|" + p.n : p.d, "In the list: ");
+      if (!isUnit(f)) (this.unitsOf.get(p.c + "|" + p.n) || []).forEach((pk) => { h += this.history(pk, "Its unit, " + esc(pk.split("|")[1]) + ", is in the list: "); });
+      return h;
+    },
+    tip(f) {
+      const y = state.year, rows = this.rows(f, y);
+      if (!rows.length) return '<div class="m">Not in the list in ' + y + "</div>";
+      return rows.map((r) => "<div>" + (r.n !== f.properties.n ? esc(r.n) + ": " : "") + pl(r.w, "week", "weeks") + " in outbreak in " + y + "</div>" +
+        (r.k === 2 ? '<div class="m">A unit of ' + r.m.length + " health districts: " + r.m.map(esc).join(", ") + "</div>" : "")).join("");
+    },
+    lists() {
+      const y = state.year, rows = this.rowsAll.filter((r) => r.y === y && inSel(r.c)).sort((a, b) => b.w - a.w || a.n.localeCompare(b.n));
+      $("list1title").textContent = "In outbreak, " + y;
+      $("list1").innerHTML = rows.length ? '<table><thead><tr><th>District or unit</th><th>Country</th><th class="r">Weeks</th></tr></thead><tbody>' +
+        rows.map((r) => clickRow(r.f) + "<td>" + esc(r.n) + (r.k === 2 ? '<span class="sm">unit of ' + r.m.length + " districts</span>" : "") + "</td><td>" + esc(countryName(r.c)) + '</td><td class="r">' + r.w + "</td></tr>").join("") + "</tbody></table>"
+        : '<p class="hint">The list has no outbreak here in ' + y + ".</p>";
+      $("list2").parentElement.hidden = true;
+    },
+    selection(list) {
+      const y = state.year, rows = list.flatMap((f) => this.rows(f, y));
+      return "<dt>" + y + "</dt><dd>" + pl(rows.length, "district or unit", "districts and units") + " in outbreak \u00b7 " + pl(sum(rows.map((r) => r.w)), "week", "weeks") + "</dd>";
+    },
+    source() {
+      const n = this.rowsAll.length, u = this.rowsAll.filter((r) => r.k === 2).length;
+      return "<p>The districts in outbreak each year, 2003\u20132022, and for how many weeks, from the list published by <b>Molly Cliff</b> and colleagues with their papers (see Sources below). They count a week as an outbreak week at 10 or more cases per 100,000 people.</p>" +
+        "<p><b>" + fmt(n) + " district-years</b> are shown for the nine countries, of " + fmt(cliffData.listed) + " in her list." + (cliffData.underReview ? " The link to a district is under review for " + cliffData.underReview + " of them (Niamey, 2015 and 2016)." : "") + "</p>" +
+        "<p><b>Units, not always districts.</b> Her list uses administrative units. " + u + " of the " + fmt(n) + " are units that hold several health districts, such as a province in Burkina Faso or a department in Cameroon. " +
+        "The list doesn't say which district had the outbreak, so the unit is drawn whole, with a dashed outline, and its weeks are added up over its districts.</p>" +
+        "<p><b>Ghana, 2016\u20132019, left out.</b> Her " + cliffData.leftOut + " Ghana rows for these years look attached to the wrong districts: they sit around Tamale and Accra, several in districts WHO's map shows only from 2019, while WHO's bulletins for the same years name districts in Upper West. This has not been confirmed with the authors.</p>";
+    },
+  };
+
+  // ---- Bulletins 2010-20: the districts WHO's weekly bulletins named in alert or epidemic, extracted by hand by Zhengyang and ZhouZheng.
+  // A row: [country, year, first week, last week, outline (-1: not placed), 2 epidemic / 1 alert, attack rate as printed, flags, name as printed, district, note, bulletin]
+  // flags: 1 alert under the old line of 5 per 100,000 (before 2016), 2 link to check, 4 still to verify, 8 drawn inside the district it was cut from, 16 drawn on its earlier outline
+  const BBRK = [1, 2, 3, 5, 8, 12];
+  XV.bull = {
+    years: [2010, 2020], start: 2016,
+    init() { this.rowsAll = bullData.rows; this.idx = group(this.rowsAll.filter((r) => r[4] >= 0), (r) => r[4] + "|" + r[1]); },
+    enter() { if (!this.seen) { this.seen = true; state.week = this.peakWeek(state.year); } },
+    peakWeek(y) { const t = this.perWeek(this.rowsAll.filter((r) => r[1] === y)); const all = t.ep.map((v, i) => v + t.al[i]); return all.indexOf(Math.max(...all)) + 1; },
+    perWeek(rows) {
+      const n = isoWeeks(state.year), ep = new Array(n).fill(0), al = new Array(n).fill(0);
+      rows.forEach((r) => { for (let k = r[2]; k <= Math.min(r[3], n); k++) (r[5] === 2 ? ep : al)[k - 1]++; });
+      return { ep, al };
+    },
+    rows(f, y) { return f.kind === "d" ? this.idx.get(f.id + "|" + y) || [] : []; },
+    has(f, y) { return f.kind === "d" && this.idx.has(f.id + "|" + y); },
+    at(rows, w) { return rows.filter((r) => r[2] <= w && w <= r[3]); },
+    colour(rows) { return rows.some((r) => r[5] === 2) ? "var(--epi)" : rows.some((r) => !(r[7] & 1)) ? "var(--alert)" : "url(#oldalert)"; },
+    fill(f) {
+      const rows = this.rows(f, state.year); if (!rows.length) return "transparent";
+      if (weekMode()) { const now = this.at(rows, state.week); return now.length ? this.colour(now) : "transparent"; }
+      const ne = rows.filter((r) => r[5] === 2).length;
+      return ne ? "var(--r" + (cls(ne, BBRK) + 1) + ")" : this.colour(rows);
+    },
+    statusTxt(r) { return r[5] === 2 ? "epidemic" : r[7] & 1 ? "alert, old line" : "alert"; },
+    oldNote() { return state.year < 2016 ? '<span class="lbl">Until 2015 an alert was called at 5 per 100,000, not 3: these alerts can\'t be compared with 2016 and later. Epidemics can.</span>' : ""; },
+    legend() {
+      const y = state.year, old = y < 2016;
+      const alertSw = old ? oldSw : swatch("var(--alert)"), alertTxt = old ? " under the old line (5\u201310 per 100,000)" : " (3\u201310 per 100,000)";
+      const alert = "<span>" + alertSw + "alert" + alertTxt + "</span>";
+      if (weekMode()) return '<span class="lbl">Named in WHO\'s bulletin, week ' + state.week + ", " + y + "</span><span>" + swatch("var(--epi)") + "epidemic (10+ per 100,000)</span>" + alert + "<span>" + noneSw + "not named</span>" + this.oldNote();
+      return '<span class="lbl">Bulletins naming the district in epidemic in ' + y + "</span>" + labelsFor(BBRK).map((t, i) => "<span>" + swatch("var(--r" + (i + 1) + ")") + t + "</span>").join("") +
+        "<span>" + alertSw + "alert only" + alertTxt + "</span><span>" + noneSw + "not named</span>" + this.oldNote();
+    },
+    summary(cname) {
+      const y = state.year, w = state.week, wk = weekMode(), rows = this.rowsAll.filter((r) => r[1] === y && inSel(r[0])), t = this.perWeek(rows);
+      const old = y < 2016 ? " (old line: 5 per 100,000)" : "";
+      $("sumtitle").textContent = cname + (wk ? ", week " + w + " " : ", ") + y;
+      let h;
+      if (wk) h = stat(fmt(t.ep[w - 1] || 0), "districts named in epidemic") + stat(fmt(t.al[w - 1] || 0), "named in alert" + old);
+      else {
+        const by = group(rows, (r) => r[0] + "|" + (r[9] || r[8])); let e = 0, a = 0;
+        by.forEach((rs) => { if (rs.some((r) => r[5] === 2)) e++; else a++; });
+        h = stat(fmt(e), "districts named in epidemic at least once") + stat(fmt(a), "named in alert only" + old) +
+          stat(fmt(rows.filter((r) => r[5] === 2).length), "district-weeks in epidemic") + stat(fmt(rows.filter((r) => r[5] === 1).length), "district-weeks in alert" + old);
+      }
+      const all = this.rowsAll.filter((r) => inSel(r[0]));
+      h += stat(fmt(all.length), "district-weeks named, 2010\u201320") + stat(fmt(all.filter((r) => r[7] & 4).length), "of them still being checked against the bulletin");
+      const tot = t.ep.map((v, i) => v + t.al[i]);
+      h += '<div class="wide"><div class="hint">Districts named in alert or epidemic, by week of ' + y + "</div>" +
+        spark(tot, tot.length, wk ? w : 0, "var(--r4)", "districts named", { label: "Districts named by week" }) + "</div>";
+      $("stats").innerHTML = h;
+    },
+    strip(rows, hi) {
+      const n = isoWeeks(state.year), W = 300, H = 30, bw = (W - 2) / n; let r = "";
+      for (let i = 0; i < n; i++) {
+        const now = this.at(rows, i + 1), on2 = i + 1 === hi;
+        r += '<rect x="' + (1 + i * bw).toFixed(1) + '" y="' + (on2 ? 2 : 7) + '" width="' + Math.max(1, bw - 1.2).toFixed(1) + '" height="' + (on2 ? 24 : 14) + '" rx="1" style="fill:' + (now.length ? this.colour(now) : "var(--cell0)") + '"' +
+          (on2 ? ' stroke="var(--ink)" stroke-width="1"' : "") + "><title>Week " + (i + 1) + ": " + (now.length ? now.map((x) => this.statusTxt(x)).join(", ") : "not named") + "</title></rect>";
+      }
+      return '<svg class="strip" viewBox="0 0 ' + W + " " + (H + 12) + '" preserveAspectRatio="none" role="img" aria-label="Named in the bulletins, by week">' + r +
+        '<text x="1" y="' + (H + 10) + '" font-size="9" fill="var(--muted)">week 1</text><text x="' + (W - 1) + '" y="' + (H + 10) + '" font-size="9" fill="var(--muted)" text-anchor="end">week ' + n + "</text></svg>";
+    },
+    weekTxt(r) { return r[2] === r[3] ? String(r[2]) : r[2] + "\u2013" + r[3]; },
+    table(rows, withName) {
+      return "<table><thead><tr><th>Week</th><th>Status</th><th class=\"r\">Per 100,000</th><th></th></tr></thead><tbody>" + rows.map((r) => {
+        const b = bullData.bulletins[r[11]];
+        return "<tr><td>" + this.weekTxt(r) + "</td><td>" + this.statusTxt(r) + (withName(r) ? '<span class="sm">' + esc(withName(r)) + "</span>" : "") +
+          (r[7] & 4 ? '<span class="tag">being checked</span>' : "") + (r[7] & 2 ? '<span class="tag">link to confirm</span>' : "") + '</td><td class="r">' + (r[6] == null ? "\u2014" : esc(r[6])) + "</td><td>" +
+          (b && b[1] ? '<a href="' + esc(b[1]) + '" target="_blank" rel="noopener">bulletin</a>' : "") + "</td></tr>";
+      }).join("") + "</tbody></table>";
+    },
+    detail(f) {
+      const y = state.year, rows = this.rows(f, y).slice().sort((a, b) => a[2] - b[2]), p = f.properties;
+      if (!rows.length) return "<dt>" + y + '</dt><dd>not named in the bulletins</dd></dl>';
+      const ne = rows.filter((r) => r[5] === 2).length;
+      // an outline can carry more than one district: a district the bulletins named before WHO's map drew it is drawn inside the one it was cut from
+      const by = [...group(rows, (r) => r[9]).entries()], line = (rs) => rs.filter((r) => r[5] === 2).length + " in epidemic, " + rs.filter((r) => r[5] === 1).length + " in alert";
+      let h = by.length > 1 || by[0][0] !== p.n
+        ? by.map(([nm, rs], i) => "<dt>" + (i ? "" : y) + "</dt><dd>" + esc(nm) + (nm !== p.n ? " (drawn here)" : "") + ": " + line(rs) + "</dd>").join("")
+        : "<dt>" + y + "</dt><dd>named in " + pl(ne, "bulletin", "bulletins") + " in epidemic, " + (rows.length - ne) + " in alert</dd>";
+      h += (y < 2016 ? "<dt></dt><dd>alerts under the old line</dd>" : "") + "</dl>" +
+        this.strip(rows, weekMode() ? state.week : 0) +
+        '<div class="list">' + this.table(rows, (r) => (r[9] !== p.n ? r[9] : "") + (r[8] !== r[9] && r[8] !== p.n ? (r[9] !== p.n ? ", " : "") + "printed: " + r[8] : "")) + "</div>";
+      [...new Set(rows.map((r) => r[10]).filter(Boolean))].forEach((t) => { h += '<p class="hint">' + esc(t) + "</p>"; });
+      if (rows.some((r) => r[3] > r[2])) h += '<p class="hint">A bulletin outside the season covers four or five weeks at once.</p>';
+      return h;
+    },
+    tip(f) {
+      const y = state.year, rows = this.rows(f, y);
+      if (weekMode()) { const now = this.at(rows, state.week); return now.length ? now.map((r) => "<div>Week " + this.weekTxt(r) + ": " + (r[9] !== f.properties.n ? esc(r[9]) + ", " : "") + this.statusTxt(r) + (r[6] != null ? " (" + esc(r[6]) + " per 100,000)" : "") + "</div>").join("") : '<div class="m">Not named in week ' + state.week + ", " + y + "</div>"; }
+      if (!rows.length) return '<div class="m">Not named in the bulletins in ' + y + "</div>";
+      const ne = rows.filter((r) => r[5] === 2).length;
+      return "<div>Named in " + pl(ne, "bulletin", "bulletins") + " in epidemic, " + (rows.length - ne) + " in alert in " + y + "</div>";
+    },
+    lists() {
+      const y = state.year, w = state.week, wk = weekMode(), rows = this.rowsAll.filter((r) => r[1] === y && inSel(r[0])), L1 = $("list1"), L2 = $("list2");
+      if (wk) {
+        const now = this.at(rows, w).sort((a, b) => b[5] - a[5] || (parseFloat(b[6]) || 0) - (parseFloat(a[6]) || 0));
+        $("list1title").textContent = "Named in the bulletin, week " + w + " " + y;
+        L1.innerHTML = now.length ? '<table><thead><tr><th>District</th><th>Country</th><th>Status</th><th class="r">Per 100,000</th></tr></thead><tbody>' +
+          now.map((r) => clickRow(r[4]) + "<td>" + esc(r[9] || r[8]) + (r[4] < 0 ? '<span class="sm">not placed on the map</span>' : "") + "</td><td>" + esc(countryName(r[0])) + "</td><td>" + this.statusTxt(r) + '</td><td class="r">' + (r[6] == null ? "\u2014" : esc(r[6])) + "</td></tr>").join("") + "</tbody></table>"
+          : '<p class="hint">The bulletins name no district here in week ' + w + ". Some weeks have no bulletin.</p>";
+      } else {
+        const by = [...group(rows.filter((r) => r[4] >= 0), (r) => r[4] + "|" + r[9]).values()].map((rs) => [rs[0], rs.filter((r) => r[5] === 2).length, rs.filter((r) => r[5] === 1).length])
+          .sort((a, b) => b[1] - a[1] || b[2] - a[2]).slice(0, 60);
+        $("list1title").textContent = "Most often named, " + y;
+        L1.innerHTML = by.length ? '<table><thead><tr><th>District</th><th>Country</th><th class="r">Epidemic</th><th class="r">Alert</th></tr></thead><tbody>' +
+          by.map(([r, e, a]) => clickRow(r[4]) + "<td>" + esc(r[9]) + "</td><td>" + esc(countryName(r[0])) + '</td><td class="r">' + e + '</td><td class="r">' + a + "</td></tr>").join("") + "</tbody></table>"
+          : '<p class="hint">The bulletins name no district here in ' + y + ".</p>";
+      }
+      const un = rows.filter((r) => r[4] < 0);
+      $("list2title").textContent = "Named in " + y + " but not placed on the map";
+      L2.innerHTML = un.length ? this.table(un, (r) => r[8] + ", " + countryName(r[0])) + '<p class="hint">The bulletin\'s name fits more than one district, and it doesn\'t say which.</p>' : "";
+      L2.parentElement.hidden = !un.length;
+    },
+    selection(list) {
+      const y = state.year, rows = list.flatMap((f) => this.rows(f, y)), ne = rows.filter((r) => r[5] === 2).length;
+      return "<dt>" + y + "</dt><dd>named in " + pl(ne, "bulletin", "bulletins") + " in epidemic, " + (rows.length - ne) + " in alert</dd>";
+    },
+    source() {
+      const n = this.rowsAll.length, un = this.rowsAll.filter((r) => r[4] < 0).length, chk = this.rowsAll.filter((r) => r[7] & 4).length, old = this.rowsAll.filter((r) => r[7] & 1).length;
+      return "<p>The districts WHO's weekly meningitis bulletins named in alert or in epidemic, 2010\u20132020, with the attack rate as printed. <b>Zhengyang</b> and <b>ZhouZheng</b> read every bulletin and extracted them by hand: " +
+        "<b>" + fmt(n) + " district-weeks</b> in the nine countries, " + fmt(n - un) + " of them placed on the map.</p>" +
+        "<p><b>Alerts compare only from 2016.</b> Until 2015 an alert was called at 5 cases per 100,000, from 2016 at 3. The " + fmt(old) + " alerts of 2010\u201315 are striped and can't be compared with later years. Epidemics were called at 10 per 100,000 in every year and compare across all of them.</p>" +
+        "<p><b>What the bulletins leave out.</b> They name a district only when it is over a threshold, and give no figure for the others. Some weeks have no bulletin, and outside the season one bulletin covers four or five weeks. A blank district was not named; that is not the same as no cases.</p>" +
+        "<p>" + chk + " of the " + fmt(n) + " rows are still being checked against the bulletin, and " + un + " could not be placed because the name fits two districts. Each row links to its bulletin.</p>";
+    },
+  };
+
   function fillFor(f) {
+    const X = xview(); if (X) return X.fill(f);
     if (state.view === "bounds") return "transparent";
     if (state.view === "thr") return thrFill(f);
     if (seasonView()) return seasonFill(f);
@@ -445,12 +739,16 @@
     $("v-thr").setAttribute("aria-pressed", state.view === "thr");
     $("v-bounds").setAttribute("aria-pressed", state.view === "bounds");
     $("v-season").setAttribute("aria-pressed", seasonView());
+    $("v-cliff").setAttribute("aria-pressed", state.view === "cliff");
+    $("v-bull").setAttribute("aria-pressed", state.view === "bull");
     $("p-week").setAttribute("aria-pressed", state.period === "week");
     $("p-year").setAttribute("aria-pressed", state.period === "year");
-    $("periodctl").hidden = !dataView();
+    $("lvlctl").hidden = !!xview();
+    $("periodctl").hidden = !(dataView() || state.view === "bull");
     $("weekctl").hidden = !weekMode();
-    $("yearctl").hidden = seasonView(); $("play").hidden = seasonView();
-    if (dataView()) { yr.min = 2021; yr.max = 2026; } else { yr.min = 2015; yr.max = 2026; }
+    $("yearctl").hidden = seasonView(); $("play").hidden = seasonView(); $("rangectl").hidden = !seasonView();
+    $("yfrom").value = state.from; $("yto").value = state.to;
+    if (!seasonView()) { const [y0, y1] = yearRange(); yr.min = y0; yr.max = y1; state.year = Math.min(y1, Math.max(y0, state.year)); }
     yr.value = state.year;
     wk.max = nweeksOf(state.year);
     if (state.week > +wk.max) state.week = +wk.max;
@@ -462,16 +760,24 @@
 
   function setView(v) {
     stopPlay();
-    const before = state.year, wasBounds = state.view === "bounds";
+    const old = state.view, before = state.year, wasBounds = old === "bounds";
     if (v === "bounds") loadBelt();
-    // the Season view averages 2021-25 on the latest full year's outlines; the other views get their year back
-    if (v === "season" && state.view !== "season") { state.yearBack = state.year; state.year = stats.seasons.years[stats.seasons.years.length - 1]; }
-    else if (v !== "season" && state.view === "season" && state.yearBack) state.year = state.yearBack;
+    if (v === "season") loadSeason();
+    // every source has its own years: Cases, Thresholds and Boundary history share one year, each new tab remembers its own,
+    // and Season shows a range on the outlines of its last year
+    if (old !== "season") state.ymem[XV[old] ? old : "main"] = state.year;
     state.view = v;
-    if (v !== "bounds" && state.year < 2021) state.year = 2025;
-    if (state.year !== before) prevYear = null;
+    if (v === "season") state.year = state.to;
+    else if (XV[v]) state.year = state.ymem[v] || XV[v].start;
+    else { const y = state.ymem.main || 2025; state.year = v === "bounds" || y >= stats.years[0] ? y : 2025; }
+    if (XV[v] && XV[v].enter) XV[v].enter();
+    if (state.year !== before || XV[v] || XV[old]) prevYear = null;
     render();
     if (wasBounds !== (v === "bounds")) fitSelection();
+  }
+  function setRange(a, b, moved) {
+    if (a > b) { if (moved === "from") b = a; else a = b; }
+    state.from = a; state.to = b; state.year = b; scache.clear(); prevYear = null; render();
   }
   function setPeriod(p) { stopPlay(); state.period = p; render(); }
   function setLevel(l) { stopPlay(); state.level = l; state.pinned = null; state.sel.clear(); state.hover = null; render(); }
@@ -482,7 +788,8 @@
     zoom.scaleExtent([state.view === "bounds" ? 1 : K0 * 0.85, 40]);
     const y = state.year;
     const onLevel = (f) => (isReg() ? f.kind === "r" : f.properties.c === CHAD ? (chadByProv() ? f.kind === "r" : f.kind === "d") : f.kind === "d");
-    const shown = (f) => onLevel(f) && valid(f, y) && (f.properties.c < NSTUDY || state.view === "bounds");
+    const X = xview();
+    const shown = (f) => onLevel(f) && on(f, y) && (f.properties.c < NSTUDY || state.view === "bounds");
     if (state.pinned && !shown(state.pinned)) state.pinned = null;
     state.sel.forEach((f) => { if (!shown(f)) state.sel.delete(f); });
     if (state.sel.size === 1) { state.pinned = [...state.sel][0]; state.sel.clear(); }
@@ -494,10 +801,13 @@
         .classed("pin", picked);
       sel.filter((f) => !onLevel(f)).classed("flash", false);
     });
+    // in the two new tabs the outlines with something to show go on top, the smaller ones last: a unit can hold a district that is listed too
+    if (X) paths.filter((f) => X.has(f, y)).nodes().map((n) => [n, d3.select(n).datum().a]).sort((a, b) => b[1] - a[1]).forEach(([n]) => n.parentNode.appendChild(n));
     allSels().forEach((sel) => sel.filter(picked).raise());
     renderChadLabels();
-    const step = prevYear !== null && prevYear !== y && prevLevel === state.level;
-    const changed = step ? F().filter((f) => valid(f, y) && !valid(f, prevYear) && inSel(f.properties.c) && !f.properties.k) : [];
+    $("srcpanel").hidden = !X; if (X) $("srcbody").innerHTML = X.source();
+    const step = !X && prevYear !== null && prevYear !== y && prevLevel === state.level;
+    const changed = step ? F().filter((f) => on(f, y) && !on(f, prevYear) && inSel(f.properties.c) && !f.properties.k) : [];
     if (step) lastChanged = changed.length;
     if (prevLevel !== state.level) lastChanged = 0;
     prevYear = y; prevLevel = state.level;
@@ -592,6 +902,7 @@
 
   function renderLegend() {
     const L = $("legend"), y = state.year;
+    if (xview()) { L.innerHTML = xview().legend(); return; }
     const hatch = '<span><svg width="14" height="10" style="vertical-align:-1px;margin-right:5px;border:1px solid var(--ring);border-radius:2px"><rect width="14" height="10" fill="url(#hatch)"/></svg>no report</span>';
     if (state.view === "cases") {
       L.innerHTML = '<span class="lbl">Cases per ' + unitWord(false) + (weekMode() ? " in week " + state.week + ", " + y : " in " + y) + "</span>" +
@@ -608,13 +919,13 @@
         L.innerHTML = '<span class="lbl">' + lbl + "</span>" + labelsFor(br).map((t, i) => '<span><span class="sw" style="background:var(--r' + (i + 1) + ')"></span>' + t + "</span>").join("") + none + "none</span>" + hatch;
       }
     } else if (seasonView()) {
-      L.innerHTML = '<span class="lbl">Season, 2021\u201325: how bunched each ' + unitWord(false) + "'s cases are in the year</span>" +
+      L.innerHTML = '<span class="lbl">Season, ' + rangeTxt() + ": how bunched each " + unitWord(false) + "'s cases are in the year</span>" +
         ["little or no season (under 0.25)", "some season (0.25\u20130.5)", "clear season (0.5 or more)"].map((t, i) => '<span><span class="sw" style="background:var(--s' + (i + 1) + ')"></span>' + t + "</span>").join("") +
-        '<span><span class="sw" style="background:transparent;border-color:var(--ink-2)"></span>fewer than 20 cases</span>' + hatch;
+        '<span><span class="sw" style="background:transparent;border-color:var(--ink-2)"></span>fewer than 20 cases</span>' + hatch + (SEAS ? "" : '<span class="lbl">Loading\u2026</span>');
     } else {
-      L.innerHTML = '<span class="lbl">' + (isReg() ? "Region" : "District") + " outlines valid on 1 July " + y + '</span><span><span class="sw" style="background:transparent;border-color:var(--ink-2)"></span>outline</span>';
+      L.innerHTML = '<span class="lbl">' + (isReg() ? "Region" : "District") + " outlines in use on 1 July " + y + '</span><span><span class="sw" style="background:transparent;border-color:var(--ink-2)"></span>outline</span>';
     }
-    if (state.view === "bounds") L.innerHTML += '<span><span class="sw" style="background:var(--flash);opacity:0.6"></span>changed from the year before (flashes)</span>';
+    if (state.view === "bounds" || (dataView() && lastChanged)) L.innerHTML += '<span><span class="sw" style="background:var(--flash);opacity:0.6"></span>changed from the year before (flashes)</span>';
     if (state.view === "bounds" && !beltReady) L.innerHTML += '<span class="lbl">Loading the rest of the belt\u2026</span>';
     if (chadByProv() && inSel(CHAD)) L.innerHTML += '<span class="lbl">Chad is drawn by province: cases are summed over its districts' + (state.view === "thr" ? (weekMode() ? "; red if any of its districts is in epidemic, yellow if any is in alert; the number is how many of its districts were over the threshold that week" : "; red if any of its districts was in epidemic at some point in the year, yellow if any was in alert; the number is how many of its districts were over the threshold at least once") : "") + "</span>";
   }
@@ -627,13 +938,14 @@
 
   function renderSummary() {
     const y = state.year, S = $("stats"), w = state.week;
-    const shown = F().filter((f) => valid(f, y) && inSel(f.properties.c));
+    const shown = F().filter((f) => on(f, y) && inSel(f.properties.c));
     const cname = state.country < 0 ? (state.view === "bounds" && beltReady ? "All " + ALLC.length + " belt countries" : "All " + NSTUDY + " countries") : countryName(state.country);
     let nDash = 0, nLinked = 0;
     stats.countries.forEach((_, ci) => { if (inSel(ci)) { const s = (stats.summary[ci] || {})[y]; if (s) { nDash += s[0]; nLinked += ci === CHAD && chadByProv() ? s[0] : s[1]; } } });
     const leftover = unmatchedFor(y);
     const missLabel = isReg() ? "dashboard districts not placed in a region" : "dashboard districts with no outline";
     const missN = isReg() ? leftover.length : nDash - nLinked;
+    if (xview()) { xview().summary(cname); return; }
     if (state.view === "cases" && weekMode()) {
       $("sumtitle").textContent = cname + ", week " + w + " " + y;
       let cases = 0, deaths = 0, rep = 0, pos = 0;
@@ -647,7 +959,7 @@
       shown.forEach((f) => { const st = statOf(f, y); if (st) { cases += st[0] || 0; deaths += st[1] || 0; } });
       leftover.forEach((u) => { cases += u[3] || 0; deaths += u[4] || 0; });
       S.innerHTML = stat(fmt(cases), "suspected cases") + stat(fmt(deaths), "deaths") +
-        stat(fmt(nDash), "districts in the dashboard") + stat(fmt(missN), missLabel) + stat(fmt(shown.length), unitWord(true) + " on WHO's map");
+        stat(fmt(nDash), "districts in the dashboard") + stat(fmt(missN), missLabel) + stat(fmt(shown.length), unitWord(true) + " on the map");
     } else if (state.view === "thr") {
       let over = 0, epi = 0;
       stats.countries.forEach((_, ci) => {
@@ -664,7 +976,8 @@
         : (() => { let n = 0, e = 0; stats.countries.forEach((_, ci) => { const t = inSel(ci) && ((stats.thrN || {})[ci] || {})[y]; if (t) { n += t[0]; e += t[1]; } });
             return stat(fmt(n), "districts over the threshold at least once") + stat(fmt(e), "of them reached epidemic") + stat(fmt(n - e), "alert only") + stat(fmt(noOutline), "of them with no outline"); })();
     } else if (seasonView()) {
-      $("sumtitle").textContent = cname + ", average year 2021\u201325";
+      $("sumtitle").textContent = cname + ", average year " + rangeTxt();
+      if (!SEAS) { S.innerHTML = '<p class="hint">Loading\u2026</p>'; return; }
       const agg = seasonCountries(), m = seasonMeasures(agg), k = { clear: 0, some: 0, little: 0, few: 0 };
       shown.forEach((f) => { const s = seasonOf(f); if (s) k[seasonClass(s)]++; });
       S.innerHTML = stat(fmt(Math.round(m.tot)), "suspected cases a year") + stat(pctTxt(m.jan), "of them in January\u2013June") +
@@ -675,7 +988,7 @@
       $("sumtitle").textContent = cname + ", 1 July " + y;
       const began = shown.filter((f) => Math.floor(f.properties.s / 10000) === y).length;
       const ended = F().filter((f) => inSel(f.properties.c) && Math.floor(f.properties.e / 10000) === y - 1 && f.properties.e < 99991231).length;
-      let h = stat(fmt(shown.length), unitWord(true) + " on WHO's map") + stat(fmt(lastChanged), "changed from the last year shown") +
+      let h = stat(fmt(shown.length), unitWord(true) + " on the map") + stat(fmt(lastChanged), "changed from the last year shown") +
         stat(fmt(began), "outlines new in " + y) + stat(fmt(ended), "retired at the end of " + (y - 1));
       if (y >= 2021 && state.country >= 0 && state.country < NSTUDY) h += stat(fmt(nDash), "districts in the dashboard") + stat(fmt(missN), missLabel);
       S.innerHTML = h;
@@ -683,7 +996,8 @@
   }
   const stat = (v, k) => '<div class="stat"><div class="v">' + v + '</div><div class="k">' + k + "</div></div>";
 
-  function spark(arr, nweeks, hi, color = "var(--q4)", unit = "cases") {
+  function spark(arr, nweeks, hi, color = "var(--q4)", unit = "cases", o = {}) {
+    const nameOf = o.name || ((i) => "Week " + (i + 1));
     const W = 300, H = 76, pad = 14, bw = (W - 2) / nweeks;
     const max = Math.max(1, ...arr.map((v) => v || 0));
     let bars = "";
@@ -692,13 +1006,13 @@
       if (w === hi) bars += '<rect x="' + (1 + i * bw).toFixed(1) + '" y="0" width="' + bw.toFixed(1) + '" height="' + (H - pad) + '" fill="var(--accent-soft)"/>';
       if (v) {
         const h = Math.max(1.5, (v / max) * (H - pad - 6));
-        bars += '<rect x="' + x + '" y="' + (H - pad - h).toFixed(1) + '" width="' + bwid + '" height="' + h.toFixed(1) + '" rx="1" fill="' + (w === hi ? "var(--accent)" : color) + '"><title>Week ' + w + ": " + v + " " + unit + "</title></rect>";
+        bars += '<rect x="' + x + '" y="' + (H - pad - h).toFixed(1) + '" width="' + bwid + '" height="' + h.toFixed(1) + '" rx="1" fill="' + (w === hi ? "var(--accent)" : color) + '"><title>' + nameOf(i) + ": " + v + " " + unit + "</title></rect>";
       }
     });
-    return '<svg class="spark" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="Weekly cases">' + bars +
+    return '<svg class="spark" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="' + (o.label || "Weekly cases") + '">' + bars +
       '<line x1="0" x2="' + W + '" y1="' + (H - pad) + '" y2="' + (H - pad) + '" stroke="var(--axis)" stroke-width="1"/>' +
-      '<text x="1" y="' + (H - 2) + '" font-size="9" fill="var(--muted)">week 1</text>' +
-      '<text x="' + (W - 1) + '" y="' + (H - 2) + '" font-size="9" fill="var(--muted)" text-anchor="end">week ' + nweeks + "</text>" +
+      '<text x="1" y="' + (H - 2) + '" font-size="9" fill="var(--muted)">' + (o.l0 || "week 1") + "</text>" +
+      '<text x="' + (W - 1) + '" y="' + (H - 2) + '" font-size="9" fill="var(--muted)" text-anchor="end">' + (o.l1 || "week " + nweeks) + "</text>" +
       '<text x="' + (W - 1) + '" y="9" font-size="9" fill="var(--muted)" text-anchor="end">peak ' + max + "</text></svg>";
   }
 
@@ -727,9 +1041,11 @@
   function renderSelection() {
     const D = $("detail"), y = state.year, w = state.week, wk = weekMode(), list = [...state.sel], n = nweeksOf(y);
     const nP = list.filter(isChadProv).length, nD = list.length - nP;
-    const what = isReg() ? pl(list.length, "region", "regions") : [nD ? pl(nD, "district", "districts") : "", nP ? pl(nP, "Chad province", "Chad provinces") : ""].filter(Boolean).join(" and ");
+    const nU = list.filter(isUnit).length;
+    const what = isReg() ? pl(list.length, "region", "regions") : [nD - nU ? pl(nD - nU, "district", "districts") : "", nU ? pl(nU, "unit", "units") : "", nP ? pl(nP, "Chad province", "Chad provinces") : ""].filter(Boolean).join(" and ");
     let h = '<h2>Selection</h2><div class="nm">' + what + '</div><dl class="kv">', chart = "";
-    if (state.view === "cases") {
+    if (xview()) h += xview().selection(list);
+    else if (state.view === "cases") {
       const tot = new Array(n).fill(null);
       let cases = 0, deaths = 0, wd = 0, rep = 0, linked = 0;
       list.forEach((f) => {
@@ -767,7 +1083,7 @@
       if (over.some((v) => v)) chart = spark(over, n, wk ? w : 0, "var(--r4)", "districts over the threshold");
     } else if (seasonView()) {
       const s = seasonAdd(list.map(seasonOf)), m = seasonMeasures(s);
-      h += "<dt>Cases</dt><dd>" + fmt(s.total) + " in 2021\u201325</dd>";
+      h += "<dt>Cases</dt><dd>" + fmt(s.total) + " in " + rangeTxt() + "</dd>";
       if (m.tot) {
         h += "<dt>January\u2013June</dt><dd>" + pctTxt(m.jan) + " of them</dd><dt>Over the threshold</dt><dd>" + pctTxt(m.out) + " of cases came in those weeks</dd>" +
           "<dt>Strength</dt><dd>" + m.R.toFixed(2) + " for the selection as a whole</dd>";
@@ -785,14 +1101,15 @@
   function renderDetail() {
     if (state.sel.size > 1) { renderSelection(); return; }
     const f = state.hover || state.pinned, D = $("detail");
-    const title = isReg() ? "Region" : f0IsChad() ? "Province (Chad)" : "District";
+    const title = isReg() ? "Region" : f0IsChad() ? "Province (Chad)" : f && isUnit(f) ? "Administrative unit" : "District";
     if (!f) { D.innerHTML = "<h2>" + title + '</h2><p class="hint">Hover over the map for details. Click to keep one here, or Cmd-click (Ctrl-click) to add several and see their totals.</p>'; return; }
     const p = f.properties, y = state.year, w = state.week;
     const where = f.kind === "r" ? esc(countryName(p.c)) : esc(p.r) + " \u00b7 " + esc(countryName(p.c));
     let h = "<h2>" + (f === state.pinned && !state.hover ? "Pinned " + title.toLowerCase() : title) + "</h2>" +
       '<div class="nm">' + esc(p.n) + '</div><div class="where">' + where + "</div>" +
-      '<dl class="kv"><dt>Outline</dt><dd>' + fmtDate(p.s) + " \u2192 " + fmtDate(p.e) + "</dd>";
-    if (state.view === "cases") {
+      '<dl class="kv">' + (isUnit(f) ? "" : "<dt>Outline</dt><dd>" + fmtDate(p.s) + " \u2192 " + fmtDate(p.e) + "</dd>");
+    if (xview()) h += xview().detail(f);
+    else if (state.view === "cases") {
       const st = statOf(f, y);
       if (st) {
         const a = weekly(f, y);
@@ -803,7 +1120,7 @@
         h += "<dt>Year " + y + "</dt><dd>" + fmt(st[0]) + " cases \u00b7 " + fmt(st[1]) + " deaths</dd>";
         h += f.kind === "r" ? "<dt>Districts</dt><dd>" + st[2] + " in the dashboard</dd>" : "<dt>Weeks reported</dt><dd>" + st[2] + " of " + nweeksOf(y) + "</dd>";
         const dn = f.kind === "r" ? [] : ((stats.dashNames[f.id] || {})[y] || []);
-        if (dn.length) h += "<dt>Dashboard name</dt><dd>" + dn.map(esc).join(", ") + "</dd>";
+        if (dn.length) h += "<dt>Drawn here</dt><dd>" + dn.map(esc).join(", ") + "</dd>";
         h += "</dl>";
         if (isChadProv(f)) h += chadNamesHtml(f, y, 40); else if (f.kind === "r") h += extrasHtml(f, y);
         h += a.some((v) => v) ? spark(a, nweeksOf(y), weekMode() ? w : 0) : '<p class="hint">No cases reported in ' + y + ".</p>";
@@ -824,7 +1141,8 @@
       }
     } else if (seasonView()) {
       const s = seasonOf(f);
-      if (!s) h += '</dl><p class="hint">No dashboard data is linked to this outline in 2021\u201325.</p>';
+      if (!SEAS) h += '</dl><p class="hint">Loading\u2026</p>';
+      else if (!s) h += '</dl><p class="hint">No dashboard data is linked to this outline in ' + rangeTxt() + ".</p>";
       else if (!s.total) h += '</dl><p class="hint">No cases reported in ' + yearsTxt(s.years) + ".</p>";
       else {
         const m = seasonMeasures(s), k = seasonClass(s);
@@ -834,16 +1152,18 @@
           "<dt>Over the threshold</dt><dd>" + pctTxt(m.out) + " of cases came in those weeks</dd></dl>" + seasonChart(s, false);
       }
     } else {
-      const others = F().filter((o) => o !== f && o.properties.c === p.c && o.properties.n === p.n);
+      const others = F().filter((o) => o !== f && o.properties.c === p.c && o.properties.n === p.n && !isUnit(o));
       h += "</dl>";
       if (p.k) h += '<p class="hint">Same outline as the version before it. WHO re-dated it without changing the boundary, for example when a district moved to another province.</p>';
       if (others.length) h += '<p class="hint">Other versions of this name: ' + others.map((o) => fmtDate(o.properties.s) + " \u2192 " + fmtDate(o.properties.e)).join("; ") + "</p>";
     }
+    if (p.u) h += '<p class="hint">' + esc(p.u) + "</p>";   // the outline is not WHO's own for these years
     D.innerHTML = h;
   }
 
   function renderUnmatched(y) {
     const L2 = $("list2");
+    if (xview()) return;   // the new tabs fill or hide this list themselves
     if (y < 2021 || seasonView() || state.country >= NSTUDY) { L2.parentElement.hidden = true; return; }
     const wk = weekMode(), w = state.week;
     const thr = state.view === "thr";
@@ -857,7 +1177,7 @@
     $("list2title").textContent = thr ? (isReg() ? "Over the threshold, not placed in a region, " : "Over the threshold with no outline, ") + (wk ? "week " + w + " " : "") + y
       : (isReg() ? "Dashboard districts not placed in a region, " : "Dashboard districts with no outline, ") + (wk ? "week " + w + " " : "") + y;
     const col = thr ? (wk ? "Status" : "Weeks") : "Cases";
-    L2.innerHTML = um.length ? "<table><thead><tr><th>Dashboard name</th><th>Country</th><th class=\"r\">" + col + "</th></tr></thead><tbody>" +
+    L2.innerHTML = um.length ? "<table><thead><tr><th>District</th><th>Country</th><th class=\"r\">" + col + "</th></tr></thead><tbody>" +
       um.slice(0, 80).map(([u, v]) => "<tr><td>" + esc(u[1]) + '<span class="sm">' + esc(u[2]) + "</span></td><td>" + esc(u[0]) + '</td><td class="r">' + (v == null ? "\u2014" : thr && wk ? STATUS_TXT[v].replace("in ", "") : fmt(v)) + "</td></tr>").join("") + "</tbody></table>" +
       (um.length > 80 ? '<p class="hint">' + (um.length - 80) + " more not shown.</p>" : "")
       : '<p class="hint">' + (thr ? (isReg() ? "Every dashboard district is counted in a region, so none is left out here." : "No district without an outline crossed the threshold in this period.") : isReg() ? "Every dashboard district is counted in a region." : "Every dashboard district is linked to an outline.") + "</p>";
@@ -868,10 +1188,11 @@
   function renderLists() {
     const y = state.year, L1 = $("list1"), w = state.week;
     const Word = isReg() ? "Region" : "District";
-    if (state.view === "cases") {
+    if (xview()) xview().lists();
+    else if (state.view === "cases") {
       const wk = weekMode();
       $("list1title").textContent = "Most cases, " + (wk ? "week " + w + " " : "") + y;
-      const rows = F().filter((f) => valid(f, y) && inSel(f.properties.c)).map((f) => {
+      const rows = F().filter((f) => on(f, y) && inSel(f.properties.c)).map((f) => {
         const st = statOf(f, y); if (!st) return null;
         return wk ? [f, weekly(f, y)[w - 1], deathsIn(st[4], w)] : [f, st[0], st[1]];
       }).filter((r) => r && r[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 15);
@@ -882,7 +1203,7 @@
       const wk = weekMode();
       if (!isReg()) {
         $("list1title").textContent = (wk ? "Over the threshold, week " + w + " " : "Most weeks over the threshold, ") + y;
-        let rows = distFeats.filter((f) => f.kind === "d" && valid(f, y) && inSel(f.properties.c)).map((f) => {
+        let rows = distFeats.filter((f) => f.kind === "d" && on(f, y) && inSel(f.properties.c)).map((f) => {
           const s = status(f, y); if (!s) return null;
           return wk ? [f, s[w - 1], (weekly(f, y) || [])[w - 1]] : [f, crossedWeeks(s), s.filter((v) => v === 2).length];
         }).filter((r) => r && r[1] > 0);
@@ -904,12 +1225,12 @@
       }
     } else if (seasonView()) {
       $("list1title").textContent = (isReg() ? "Regions" : "Districts") + " by season, most cases first";
-      const rows = F().filter((f) => valid(f, y) && inSel(f.properties.c)).map((f) => {
+      const rows = F().filter((f) => on(f, y) && inSel(f.properties.c)).map((f) => {
         const s = seasonOf(f); return s && s.total >= SEASON_MIN ? [f, s.total, seasonClass(s)] : null;
       }).filter(Boolean).sort((a, b) => b[1] - a[1]).slice(0, 40);
-      L1.innerHTML = rows.length ? "<table><thead><tr><th>" + Word + '</th><th>Country</th><th class="r">Cases 2021\u201325</th><th>Season</th></tr></thead><tbody>' +
+      L1.innerHTML = rows.length ? "<table><thead><tr><th>" + Word + '</th><th>Country</th><th class="r">Cases ' + rangeTxt() + "</th><th>Season</th></tr></thead><tbody>" +
         rows.map(([f, c, k]) => '<tr class="click" data-k="' + f.kind + '" data-id="' + f.id + '"><td>' + esc(f.properties.n) + (chadProvAtDistrict(f) ? '<span class="sm">province</span>' : "") + "</td><td>" + esc(countryName(f.properties.c)) + '</td><td class="r">' + fmt(c) + "</td><td>" + SEASON_SHORT[k] + "</td></tr>").join("") + "</tbody></table>"
-        : '<p class="hint">No ' + Word.toLowerCase() + " here had 20 or more cases in 2021\u201325.</p>";
+        : '<p class="hint">' + (SEAS ? "No " + Word.toLowerCase() + " here had 20 or more cases in " + rangeTxt() + "." : "Loading\u2026") + "</p>";
     } else {
       const word = Word.toLowerCase();
       $("list1title").textContent = "New " + word + " outlines in " + y;
@@ -937,7 +1258,8 @@
   function showTip(e, f) {
     const p = f.properties, T = $("tip"), y = state.year, w = state.week;
     let h = "<b>" + esc(p.n) + '</b><span class="m">' + (f.kind === "r" ? (isChadProv(f) ? "Province \u00b7 " : "") : esc(p.r) + " \u00b7 ") + esc(countryName(p.c)) + "</span>";
-    if (state.view === "cases") {
+    if (xview()) h += xview().tip(f);
+    else if (state.view === "cases") {
       const st = statOf(f, y);
       if (!st) h += '<div class="m">No dashboard data in ' + y + "</div>";
       else if (weekMode()) { const v = weekly(f, y)[w - 1]; h += "<div>Week " + w + ": " + (v == null ? "no report" : fmt(v) + " cases \u00b7 " + fmt(deathsIn(st[4], w)) + " deaths") + "</div>"; }
@@ -951,7 +1273,7 @@
       if (s) h += isChadProv(f) ? chadNamesHtml(f, y, 12) : f.kind === "r" ? extrasHtml(f, y) : unitsHtml(f, y);
     } else if (seasonView()) {
       const s = seasonOf(f);
-      if (!s) h += '<div class="m">No dashboard data in 2021\u201325</div>';
+      if (!s) h += '<div class="m">' + (SEAS ? "No dashboard data in " + rangeTxt() : "Loading\u2026") + "</div>";
       else {
         const m = seasonMeasures(s), k = seasonClass(s);
         h += "<div>" + (k === "few" ? "Fewer than 20 cases" : SEASON_TXT[k].charAt(0).toUpperCase() + SEASON_TXT[k].slice(1) + ", strength " + m.R.toFixed(2)) + "</div>" +
@@ -970,17 +1292,18 @@
     T.style.left = Math.max(8, x) + "px"; T.style.top = Math.max(8, y) + "px";
   }
 
-  function zoomTo(list) {
+  function zoomTo(list, now) {
     if (!list.length) return;
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     list.forEach((f) => { const b = f.b; x0 = Math.min(x0, b[0][0]); y0 = Math.min(y0, b[0][1]); x1 = Math.max(x1, b[1][0]); y1 = Math.max(y1, b[1][1]); });
     const k = Math.min(40, 0.9 / Math.max((x1 - x0) / width, (y1 - y0) / height));
     const t = d3.zoomIdentity.translate(width / 2, height / 2).scale(Math.max(1, list.length === 1 ? Math.min(k, 12) : k)).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
-    svg.transition().duration(matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 600).call(zoom.transform, t);
+    if (now) svg.call(zoom.transform, t);
+    else svg.transition().duration(matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 600).call(zoom.transform, t);
   }
-  function fitSelection() {
-    if (state.country < 0) { svg.transition().duration(500).call(zoom.transform, state.view === "bounds" ? d3.zoomIdentity : studyT); return; }
-    zoomTo(F().filter((f) => f.properties.c === state.country && valid(f, state.year)));
+  function fitSelection(now) {
+    if (state.country < 0) { const t = state.view === "bounds" ? d3.zoomIdentity : studyT; if (now) svg.call(zoom.transform, t); else svg.transition().duration(500).call(zoom.transform, t); return; }
+    zoomTo(F().filter((f) => f.properties.c === state.country && on(f, state.year)), now);
   }
 
   function peakWeek(y) {
@@ -1017,6 +1340,9 @@
     const pat = defs.append("pattern").attr("id", "hatch").attr("width", 5).attr("height", 5).attr("patternUnits", "userSpaceOnUse").attr("patternTransform", "rotate(45)");
     pat.append("rect").attr("width", 5).attr("height", 5).style("fill", "var(--nodata-bg)");
     pat.append("line").attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 5).style("stroke", "var(--nodata-line)").attr("stroke-width", 1.4);
+    // alerts called under the old line (before 2016): striped, so they don't read as the same thing as later alerts
+    const pat2 = defs.append("pattern").attr("id", "oldalert").attr("width", 4).attr("height", 4).attr("patternUnits", "userSpaceOnUse").attr("patternTransform", "rotate(45)");
+    pat2.append("line").attr("x1", 1).attr("y1", 0).attr("x2", 1).attr("y2", 4).style("stroke", "var(--alert)").attr("stroke-width", 2.2);
     svg.append("rect").attr("width", width).attr("height", height).style("fill", "var(--surface)");
     g = svg.append("g");
     const osm = g.append("g").attr("class", "osm");
@@ -1029,10 +1355,10 @@
     };
     placeImg(OSM.z6, "data/osm_z6.jpg");
     let sharp = null;  // the sharper background loads the first time you zoom in
-    feats.forEach((f) => { f.b = pathGen.bounds(f); });
+    feats.forEach((f) => { f.b = pathGen.bounds(f); f.a = pathGen.area(f); });
     rfeats.forEach((f) => { f.b = pathGen.bounds(f); });
     const order = (arr) => arr.slice().sort((a, b2) => a.properties.s - b2.properties.s);
-    paths = hoverable(g.append("g").selectAll("path").data(order(feats)).join("path").attr("class", "d").attr("d", pathGen));
+    paths = hoverable(g.append("g").selectAll("path").data(order(feats)).join("path").attr("class", (f) => (isUnit(f) ? "d unit" : "d")).attr("d", pathGen));
     rpaths = hoverable(g.append("g").selectAll("path").data(order(rfeats)).join("path").attr("class", "d reg").attr("d", pathGen));
     beltLayers = [g.append("g"), g.append("g")];  // filled once the rest of the belt has loaded
     g.append("g").selectAll("path").data(borders.features).join("path").attr("class", "cborder").attr("d", pathGen);
@@ -1057,6 +1383,22 @@
     $("v-thr").onclick = () => setView("thr");
     $("v-bounds").onclick = () => setView("bounds");
     $("v-season").onclick = () => setView("season");
+    $("v-cliff").onclick = () => setView("cliff");
+    $("v-bull").onclick = () => setView("bull");
+    // the two new tabs; a tab whose data file is missing is left out
+    if (!cliffData) { delete XV.cliff; $("v-cliff").hidden = true; } else XV.cliff.init();
+    if (!bullData) { delete XV.bull; $("foot-bull").hidden = true; $("src-bull").hidden = true; } else { XV.bull.init(); $("v-bull").hidden = false; }
+    // Season: a first and a last year, among the full years
+    const SY = stats.seasonYears || [];
+    state.from = SY[0]; state.to = SY[SY.length - 1];
+    ["yfrom", "yto"].forEach((id) => { $(id).innerHTML = SY.map((y) => "<option>" + y + "</option>").join(""); });
+    $("yfrom").onchange = (e) => setRange(+e.target.value, state.to, "from");
+    $("yto").onchange = (e) => setRange(state.from, +e.target.value, "to");
+    // figures in the text that change with every pull
+    const pd = String(stats.pulled || "").split("-").map(Number);
+    if (pd.length === 3) $("pulled").textContent = pd[2] + " " + ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][pd[1] - 1] + " " + pd[0] + ", to week " + stats.lastWeek + " of " + stats.years[stats.years.length - 1];
+    const ly = stats.years[stats.years.length - 1];
+    if (stats.chadDash) { $("chadn").textContent = stats.chadDash[ly]; $("chady").textContent = ly; }
     $("p-week").onclick = () => setPeriod("week");
     $("p-year").onclick = () => setPeriod("year");
     $("year").oninput = (e) => { stopPlay(); state.year = +e.target.value; render(); };
@@ -1065,9 +1407,42 @@
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && (state.sel.size || state.pinned)) { state.sel.clear(); state.pinned = null; render(); } });
     state.week = peakWeek(state.year);
     $("loading").hidden = true;
-    const VIEWS = { cases: "cases", thresholds: "thr", season: "season", boundaries: "bounds" }, v0 = VIEWS[location.hash.slice(1)];
-    if (v0 && v0 !== "cases") setView(v0); else render();
+    // the link can open a view and a state: #season, or #bulletins&year=2017&week=12&country=Niger&period=year&level=region&from=2022&to=2024&pin=Zinder
+    const VIEWS = { cases: "cases", thresholds: "thr", season: "season", boundaries: "bounds", outbreaks: "cliff", bulletins: "bull" }, H = {};
+    location.hash.slice(1).split("&").filter(Boolean).forEach((t) => { const i = t.indexOf("="); if (i < 0) H[VIEWS[t] ? "view" : t] = t; else H[t.slice(0, i)] = decodeURIComponent(t.slice(i + 1)); });
+    if (H.level === "region") state.level = "region";
+    if (H.period === "year" || H.period === "week") state.period = H.period;
+    if (H.country) { const ci = stats.countries.findIndex((c) => c.toLowerCase() === H.country.toLowerCase()); if (ci >= 0) state.country = ci; }
+    if (+H.from && SY.indexOf(+H.from) >= 0) state.from = +H.from;
+    if (+H.to && SY.indexOf(+H.to) >= 0) state.to = Math.max(state.from, +H.to);
+    const v0 = VIEWS[H.view];
+    if (v0 && v0 !== "cases" && (!/cliff|bull/.test(v0) || XV[v0])) setView(v0);
+    if (+H.year && !seasonView()) { const [y0, y1] = yearRange(); state.year = Math.min(y1, Math.max(y0, +H.year)); if (state.view === "bull" && !H.week) state.week = XV.bull.peakWeek(state.year); else if (dataView() && !H.week) state.week = peakWeek(state.year); }
+    if (+H.week) state.week = Math.max(1, +H.week);
+    if (H.pin) state.pinned = F().find((f) => on(f, state.year) && inSel(f.properties.c) && f.properties.n.toLowerCase() === H.pin.toLowerCase()) || null;
+    prevYear = null; render();
+    fitSelection(true);   // a link that names a country or a view opens on it at once, without the zoom animation
+    if (H.check) selfCheck();
     setTimeout(loadBelt, 1500);  // the rest of the belt loads in the background
+  }
+
+  // #check at the end of the link: the page walks through its own views and writes what its summary shows into a hidden block,
+  // so the build's checks can compare what a reader sees with the source files
+  async function selfCheck() {
+    const out = [], snap = () => out.push({ view: state.view, level: state.level, period: state.period, country: state.country < 0 ? "all" : countryName(state.country), year: state.year, week: state.week,
+      title: $("sumtitle").textContent, stats: [...$("stats").querySelectorAll(".stat")].map((e) => [e.querySelector(".v").textContent, e.querySelector(".k").textContent]),
+      drawn: paths.filter(function () { return this.getAttribute("display") !== "none"; }).size(), filled: paths.filter(function () { return this.getAttribute("display") !== "none" && !/transparent|hatch/.test(this.style.fill); }).size(),
+      hatched: paths.filter(function () { return this.getAttribute("display") !== "none" && /hatch/.test(this.style.fill); }).size() });
+    await loadSeason();
+    const go = (view, level, period, c, y) => { state.view = view; state.level = level; state.period = period; state.country = c; state.year = y; state.pinned = null; state.sel.clear(); render(); snap(); };
+    for (let c = -1; c < NSTUDY; c++) {
+      stats.years.forEach((y) => { go("cases", "district", "year", c, y); go("cases", "region", "year", c, y); go("thr", "district", "year", c, y); go("thr", "region", "year", c, y); });
+      for (let y = 2003; y <= 2022; y++) if (XV.cliff) go("cliff", "district", "year", c, y);
+      for (let y = 2010; y <= 2020; y++) if (XV.bull) go("bull", "district", "year", c, y);
+      state.from = stats.seasonYears[0]; state.to = stats.seasonYears[stats.seasonYears.length - 1]; scache.clear(); go("season", "district", "year", c, state.to); go("season", "region", "year", c, state.to);
+    }
+    state.from = 2022; state.to = 2023; scache.clear(); go("season", "district", "year", -1, 2023);
+    const pre = document.createElement("pre"); pre.id = "selfcheck"; pre.hidden = true; pre.textContent = JSON.stringify(out); document.body.appendChild(pre);
   }
 
   // the 17 belt countries with no case data: outlines only, loaded after the page is up
@@ -1086,8 +1461,12 @@
     return beltLoad;
   }
 
-  Promise.all(["data/outlines.json", "data/regions.json", "data/stats.json", "data/countries.json", "data/belt_countries.json"].map((u) => fetch(u).then((r) => r.json())))
-    .then(([o, r, s, c, bc]) => { geo = o; rgeo = r; stats = s; borders = c; belt = bc; init(); })
+  // a tab's own file: missing (404) hides the tab; a failed request is tried twice more before giving up
+  const optional = (u, left = 2) => fetch(u).then((r) => (r.ok ? r.json() : r.status === 404 ? null : Promise.reject(new Error(r.status))))
+    .catch(() => (left ? new Promise((ok) => setTimeout(ok, 400)).then(() => optional(u, left - 1)) : null));
+  Promise.all(["data/outlines.json", "data/regions.json", "data/stats.json", "data/countries.json", "data/belt_countries.json"].map((u) => fetch(u).then((r) => r.json()))
+    .concat([optional("data/cliff.json"), optional("data/bulletins.json")]))
+    .then(([o, r, s, c, bc, cl, bu]) => { geo = o; rgeo = r; stats = s; borders = c; belt = bc; cliffData = cl; bullData = bu; init(); })
     .catch((err) => { $("loading").innerHTML = '<div class="err">The map data did not load (' + esc(err.message) + "). Reload the page to try again.</div>"; });
 })();
 </script>
